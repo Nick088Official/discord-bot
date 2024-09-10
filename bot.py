@@ -23,7 +23,6 @@ from contextlib import redirect_stdout
 import aiohttp
 import lyricsgenius
 from timeit import default_timer as timer 
-import ee
 from google.oauth2 import service_account
 from PIL import Image
 import yt_dlp
@@ -124,12 +123,6 @@ logging.basicConfig(filename='bot_log.txt', level=logging.INFO,
 
 
 # --- Application Commands ---
-# Load Google service account credentials
-service_account = "sanctuary@sanctuary-discord-bot.iam.gserviceaccount.com"
-# Set up Earth Engine with the service account
-credentials = ee.ServiceAccountCredentials(service_account, r'/home/user/app/sanctuary-discord-bot-google-earth.json')
-
-ee.Initialize(credentials)
 
 @bot.tree.command(name="sync_commands", description="Sync / bot commands (ADMIN ONLY).")
 async def sync_commands(interaction: discord.Interaction):
@@ -161,51 +154,8 @@ async def image_to_gif(interaction: discord.Interaction, image: discord.Attachme
             os.remove(gif_path)
     except Exception as e:
         await interaction.followup.send(f"An error occurred: {e}")
-
-@bot.tree.command(name='earth')
-async def fetch_earth_image(interaction: discord.Interaction, lat: float, lon: float):
-    """Fetches a recent Landsat image for a given location."""
-    await interaction.response.defer()
-
-    location = ee.Geometry.Point([lon, lat])
-    square_region = location.buffer(10000).bounds()
-
-    try:
-        imageCollection = ee.ImageCollection('LANDSAT/LC08/C02/T1_L2') \
-                            .filterDate('2022-01-01', '2024-12-31') \
-                            .filterBounds(square_region)
-
-        image_count = imageCollection.size().getInfo()
-        print(f"Found {image_count} matching images.")
-        print(f"Image Collection: {imageCollection.getInfo()}")  # Detailed debug output
-
-        if image_count > 0:
-            image = imageCollection.sort('CLOUD_COVER').first()
-
-            if image:
-                enhanced_image = image.multiply(0.0000275).add(-0.2).clip(square_region)
-                rgb_image = enhanced_image.select(['SR_B4', 'SR_B3', 'SR_B2'])
-
-                url = rgb_image.getThumbUrl({
-                    'region': square_region.getInfo()['coordinates'],
-                    'format': 'png',
-                    'dimensions': '512x512',
-                    'min': 0,
-                    'max': 0.3
-                })
-
-                await interaction.followup.send(f"Here's the recent image for the location ({lat}, {lon}): {url}")
-            else:
-                await interaction.followup.send("No suitable Landsat images found (cloud cover too high?). "
-                                                "Try a different date range or location.")
-        else:
-            await interaction.followup.send("No Landsat images found for this location and date range. "
-                                            "Try a different location or expand the date range.")
-
-    except ee.EEException as e:
-        await interaction.followup.send(f"An error occurred: {e}")
         
-@bot.tree.command(name="eval", description="Evaluate Python code. )")
+@bot.tree.command(name="eval", description="Evaluate Python code. (ADMIN ONLY)")
 async def eval_code(interaction: discord.Interaction, code: str):
     """
     Evaluates Python code provided by the bot owner. 
