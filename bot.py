@@ -589,7 +589,7 @@ async def create_code(interaction: discord.Interaction, code_request: str):
         return
     try:
         prompt = f"""Write a {code_language} code snippet that will create and run: {code_request}
-        the computer is windows 11
+        the computer is Linux Ubuntu
         The code should be executable directly. 
         Do not include any backticks or language identifiers in the output.
         have the code by itself with NO explanation
