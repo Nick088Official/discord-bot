@@ -1064,7 +1064,7 @@ async def on_message(message: Message):
                 )
                 generated_text = chat_completion.choices[0].message.content
                 lobotomised_generated_text = generated_text[:2000] 
-            await message.channel.send(lobotomised_generated_text.strip())
+            await message.reply(lobotomised_generated_text.strip(), mention_author=True)
 
             logging.info(f"User: {message.author} - Message: {message.content} - Generated Text: {generated_text}")
             print(f"user:{message.author}\n message:{message.content}\n output:{generated_text}")
