@@ -131,6 +131,14 @@ credentials = ee.ServiceAccountCredentials(service_account, r'sanctuary-discord-
 
 ee.Initialize(credentials)
 
+@bot.tree.command(name="sync_commands", description="Sync / bot commands (ADMIN ONLY).")
+async def sync_commands(interaction: discord.Interaction):
+    if not is_authorized(interaction, PermissionLevel.ADMINISTRATOR): # Require administrator permission
+        await interaction.response.send_message("You are not authorized to use this command.", ephemeral=True)
+        return
+    await bot.tree.sync()
+    await interaction.response.send_message("Bot commands synced!", ephemeral=True)
+
 MAX_FILE_SIZE = 100 * 1024 * 1024 
 @bot.tree.command(name="image_to_gif", description="convert an image to a gif")
 async def image_to_gif(interaction: discord.Interaction, image: discord.Attachment):
