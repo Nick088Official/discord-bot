@@ -1362,8 +1362,6 @@ async def print_accessible_channels():
 async def on_ready():
     print(f'Logged in as {bot.user.name}')
     logging.info(f'Logged in as {bot.user.name}')
-    await bot.tree.sync(guild=None)
-    print("Application commands synced.")
     print("Connected to the following guilds:")
     logging.info("Application commands synced.")
 #    await print_accessible_channels()
