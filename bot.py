@@ -965,7 +965,7 @@ async def show_log(interaction: discord.Interaction):
         logging.error(f"An error occurred while reading the log file: {e}") 
 
 
- --- Message Handling --- 
+ # --- Message Handling --- 
 
 nuhuh = ["adfjhaskjfhaksfhjksa"]
 
