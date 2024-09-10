@@ -125,9 +125,9 @@ logging.basicConfig(filename='bot_log.txt', level=logging.INFO,
 
 # --- Application Commands ---
 # Load Google service account credentials
-service_account = "google-client@earth-426610.iam.gserviceaccount.com"
+service_account = "sanctuary@sanctuary-discord-bot.iam.gserviceaccount.com"
 # Set up Earth Engine with the service account
-credentials = ee.ServiceAccountCredentials(service_account, r'Downloads\discord-bot\earth-426610-efbd30cca7c5.json')
+credentials = ee.ServiceAccountCredentials(service_account, r'sanctuary-discord-bot-google-earth.json')
 
 ee.Initialize(credentials)
 
