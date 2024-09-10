@@ -595,7 +595,7 @@ async def create_code(interaction: discord.Interaction, code_request: str):
         have the code by itself with NO explanation
         never explain the code or give anything that is not just the pure code
         do not give any extra info
-        name for windows user is user1 for file paths
+        /home/user/app/discord-bot for file paths
         """
         chat_completion = client.chat.completions.create(
             messages=[{"role": "user", "content": prompt}],
