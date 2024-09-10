@@ -7,6 +7,5 @@ beautifulsoup4
 lyricsgenius
 yt-dlp
 edge-tts
-earthengine-api
 langchain
 langchain-community
