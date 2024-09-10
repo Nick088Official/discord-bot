@@ -8,3 +8,4 @@ lyricsgenius
 yt-dlp
 edge-tts
 earthengine-api
+langchain
