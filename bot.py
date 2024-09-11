@@ -367,8 +367,8 @@ def check_file(input_file_path):
 )
 @app_commands.choices(
     asr_model=[
-        discord.app_commands.Choice(name="whisper-large-v3"),
-        discord.app_commands.Choice(value="distil-whisper-large-v3-en"),
+        discord.app_commands.Choice(name="Whisper large-v3", value="whisper-large-v3"),
+        discord.app_commands.Choice(name="Distil-Whisper English", value="distil-whisper-large-v3-en"),
     ],
     language=[
         discord.app_commands.Choice(name="English", value="en"),
@@ -472,9 +472,9 @@ def check_file(input_file_path):
         discord.app_commands.Choice(name="Sundanese", value="su"),
     ],
     response_format=[
-        discord.app_commands.Choice(value="text"),
-        discord.app_commands.Choice(value="json"),
-        discord.app_commands.Choice(value="verbose_json"),
+        discord.app_commands.Choice(mame="text", value="text"),
+        discord.app_commands.Choice(name="json", value="json"),
+        discord.app_commands.Choice(name="verbose_json", value="verbose_json"),
     ]
 )
 async def transcript(interaction: discord.Interaction,
