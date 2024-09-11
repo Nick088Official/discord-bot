@@ -367,7 +367,7 @@ def check_file(input_file_path):
 )
 @app_commands.choices(
     asr_model=[
-        discord.app_commands.Choice(value="whisper-large-v3"),
+        discord.app_commands.Choice(name="whisper-large-v3"),
         discord.app_commands.Choice(value="distil-whisper-large-v3-en"),
     ],
     language=[
