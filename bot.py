@@ -479,6 +479,7 @@ def check_file(input_file_path):
         discord.app_commands.Choice(value="text"),
         discord.app_commands.Choice(value="json"),
         discord.app_commands.Choice(value="verbose_json"),
+    ]
 )
 async def transcript(interaction: discord.Interaction,
                   audio_file: discord.Attachment,
