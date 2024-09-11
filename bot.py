@@ -3,6 +3,7 @@
 import os
 import discord
 from discord.ext import commands
+from discord import app_commands
 from discord import Message, Embed
 from dotenv import load_dotenv
 from groq import Groq
@@ -132,20 +133,7 @@ async def sync_commands(interaction: discord.Interaction):
     await bot.tree.sync()
     await interaction.response.send_message("Bot commands synced!", ephemeral=True)
 
-from typing import Optional 
-
-import discord
-from discord.ext import commands
-from discord import app_commands
-import asyncio
-import os
-import subprocess
-import logging
-from datetime import timedelta
-import re
 from typing import Optional  
-
-# ... (rest of your code)
 
 @bot.tree.command(name="edit_profile", description="Edit bot profile (Admin only).")
 async def edit_profile(interaction: discord.Interaction,
@@ -276,6 +264,301 @@ async def eval_code(interaction: discord.Interaction, code: str):
         f"```python\n{code}\n```\n**Output:**\n```\n{result_str}\n```\n**Execution time:** {execution_time:.2f} ms",
         ephemeral=True,
     )
+    
+
+# whisper related
+
+# Language codes for reference
+LANGUAGE_CODES = {
+    "English": "en",
+    "Chinese": "zh",
+    "German": "de",
+    "Spanish": "es",
+    "Russian": "ru",
+    "Korean": "ko",
+    "French": "fr",
+    "Japanese": "ja",
+    "Portuguese": "pt",
+    "Turkish": "tr",
+    "Polish": "pl",
+    "Catalan": "ca",
+    "Dutch": "nl",
+    "Arabic": "ar",
+    "Swedish": "sv",
+    "Italian": "it",
+    "Indonesian": "id",
+    "Hindi": "hi",
+    "Finnish": "fi",
+    "Vietnamese": "vi",
+    "Hebrew": "he",
+    "Ukrainian": "uk",
+    "Greek": "el",
+    "Malay": "ms",
+    "Czech": "cs",
+    "Romanian": "ro",
+    "Danish": "da",
+    "Hungarian": "hu",
+    "Tamil": "ta",
+    "Norwegian": "no",
+    "Thai": "th",
+    "Urdu": "ur",
+    "Croatian": "hr",
+    "Bulgarian": "bg",
+    "Lithuanian": "lt",
+    "Latin": "la",
+    "Māori": "mi",
+    "Malayalam": "ml",
+    "Welsh": "cy",
+    "Slovak": "sk",
+    "Telugu": "te",
+    "Persian": "fa",
+    "Latvian": "lv",
+    "Bengali": "bn",
+    "Serbian": "sr",
+    "Azerbaijani": "az",
+    "Slovenian": "sl",
+    "Kannada": "kn",
+    "Estonian": "et",
+    "Macedonian": "mk",
+    "Breton": "br",
+    "Basque": "eu",
+    "Icelandic": "is",
+    "Armenian": "hy",
+    "Nepali": "ne",
+    "Mongolian": "mn",
+    "Bosnian": "bs",
+    "Kazakh": "kk",
+    "Albanian": "sq",
+    "Swahili": "sw",
+    "Galician": "gl",
+    "Marathi": "mr",
+    "Panjabi": "pa",
+    "Sinhala": "si",
+    "Khmer": "km",
+    "Shona": "sn",
+    "Yoruba": "yo",
+    "Somali": "so",
+    "Afrikaans": "af",
+    "Occitan": "oc",
+    "Georgian": "ka",
+    "Belarusian": "be",
+    "Tajik": "tg",
+    "Sindhi": "sd",
+    "Gujarati": "gu",
+    "Amharic": "am",
+    "Yiddish": "yi",
+    "Lao": "lo",
+    "Uzbek": "uz",
+    "Faroese": "fo",
+    "Haitian": "ht",
+    "Pashto": "ps",
+    "Turkmen": "tk",
+    "Norwegian Nynorsk": "nn",
+    "Maltese": "mt",
+    "Sanskrit": "sa",
+    "Luxembourgish": "lb",
+    "Burmese": "my",
+    "Tibetan": "bo",
+    "Tagalog": "tl",
+    "Malagasy": "mg",
+    "Assamese": "as",
+    "Tatar": "tt",
+    "Hawaiian": "haw",
+    "Lingala": "ln",
+    "Hausa": "ha",
+    "Bashkir": "ba",
+    "jw": "jw",
+    "Sundanese": "su",
+}
+
+# Available models
+GROQ_ASR_MODELS = ["whisper-large-v3", "distil-whisper-large-v3-en"]
+
+# Available response formats
+RESPONSE_FORMATS = ["text", "json", "verbose_json"] 
+
+# Allowed file extensions
+ALLOWED_FILE_EXTENSIONS = ["mp3", "mp4", "mpeg", "mpga", "m4a", "wav", "webm"]
+MAX_FILE_SIZE_MB = 25
+CHUNK_SIZE_MB = 25
+
+
+def handle_groq_error(e, model_name):
+    error_data = e.args[0]
+
+    if isinstance(error_data, str):
+        json_match = re.search(r'(\{.*\})', error_data)
+        if json_match:
+            json_str = json_match.group(1)
+            json_str = json_str.replace("'", '"') 
+            error_data = json.loads(json_str)
+
+    if isinstance(e, AuthenticationError):
+        if isinstance(error_data, dict) and 'error' in error_data and 'message' in error_data['error']:
+            error_message = error_data['error']['message']
+            await interaction.followup.send(error_message)
+    elif isinstance(e, RateLimitError):
+        if isinstance(error_data, dict) and 'error' in error_data and 'message' in error_data['error']:
+            error_message = error_data['error']['message']
+            error_message = re.sub(r'org_[a-zA-Z0-9]+', 'org_(censored)', error_message) 
+            await interaction.followup.send(error_message)
+    else:
+        await interaction.followup.send(f"Error during Groq API call: {e}")
+
+
+def split_audio(input_file_path, chunk_size_mb):
+    chunk_size = chunk_size_mb * 1024 * 1024 
+    file_number = 1
+    chunks = []
+    with open(input_file_path, 'rb') as f:
+        chunk = f.read(chunk_size)
+        while chunk:
+            chunk_name = f"{os.path.splitext(input_file_path)[0]}_part{file_number:03}.mp3"
+            with open(chunk_name, 'wb') as chunk_file:
+                chunk_file.write(chunk)
+            chunks.append(chunk_name)
+            file_number += 1
+            chunk = f.read(chunk_size)
+    return chunks
+
+
+def check_file(input_file_path):
+    if not input_file_path:
+        raise discord.app_commands.AppCommandError("No audio/video file provided.")
+
+    file_size_mb = os.path.getsize(input_file_path) / (1024 * 1024)
+    file_extension = input_file_path.split(".")[-1].lower()
+
+    if file_extension not in ALLOWED_FILE_EXTENSIONS:
+        raise discord.app_commands.AppCommandError(f"Invalid file type (.{file_extension}). Allowed types: {', '.join(ALLOWED_FILE_EXTENSIONS)}")
+
+    if file_size_mb > MAX_FILE_SIZE_MB:
+       logging.warning(f"File size too large ({file_size_mb:.2f} MB). Attempting to downsample to 16kHz MP3 128kbps. Maximum size allowed: {MAX_FILE_SIZE_MB} MB")
+
+        output_file_path = os.path.splitext(input_file_path)[0] + "_downsampled.mp3"
+        try:
+            subprocess.run(
+                [
+                    "ffmpeg",
+                    "-i",
+                    input_file_path,
+                    "-ar",
+                    "16000",
+                    "-ab",
+                    "128k",
+                    "-ac",
+                    "1",
+                    "-f",
+                    "mp3",
+                    "-y",
+                    output_file_path,
+                ],
+                check=True
+            )
+
+            downsampled_size_mb = os.path.getsize(output_file_path) / (1024 * 1024)
+            if downsampled_size_mb > MAX_FILE_SIZE_MB:
+                logging.warning(f"File still too large after downsampling ({downsampled_size_mb:.2f} MB). Splitting into {CHUNK_SIZE_MB} MB chunks.")
+                return split_audio(output_file_path, CHUNK_SIZE_MB), "split"
+
+            return output_file_path, None
+        except subprocess.CalledProcessError as e:
+            await interaction.followup.send(f"Error during downsampling: {e}")
+    return input_file_path, None
+
+@bot.tree.command(name="transcript", description="Transcribe an audio file using the Groq Whisper model.")
+@app_commands.describe(
+    audio_file="The audio file to transcribe.",
+    asr_model="The ASR model to use.",
+    language="The language of the audio (optional, auto-detect by default).",
+    response_format="The format of the transcript (verbose_json, srt, or vtt).",
+    temperature="The sampling temperature, between 0 and 1.",
+    prompt="An optional text to guide the model's predictions."
+)
+@app_commands.choices(
+    asr_model=[
+discord.app_commands.Choice(name="Ensemble (vocals, instrum)", value=26),
+  discord.app_commands.Choice(name="Ensemble (vocals, instrum, bass, drums, other)", value=28),
+  ]
+)
+async def transcript(interaction: discord.Interaction,
+                  audio_file: discord.Attachment,
+                  asr_model: str = "whisper-large-v3",
+                  language: Optional[str] = None,
+                  response_format: Optional[str] = "text",
+                  temperature: Optional[float] = 0.0,
+                  prompt: Optional[str] = None):
+
+
+    if not (0.0 <= temperature <= 1.0):
+        await interaction.response.send_message(
+            "Invalid temperature. Please choose a value between 0.0 and 1.0.", ephemeral=True
+        )
+        return
+
+    await interaction.response.defer()
+
+    try:
+        # Download the audio file
+        file_path = f"transcript/{audio_file.filename}"
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+        await audio_file.save(file_path)
+
+        processed_path, split_status = check_file(file_path)
+
+        if split_status == "split":
+            full_transcript = ""
+            for chunk_path in processed_path:
+                try:
+                    with open(chunk_path, "rb") as file:
+                        transcription_response = client.audio.transcriptions.create(
+                            file=(os.path.basename(chunk_path), file.read()),
+                            model=asr_model,
+                            response_format=response_format,
+                            language=language,
+                            temperature=temperature,
+                            prompt=prompt,
+                        )
+                    full_transcript += transcription_response.text
+                except AuthenticationError as e:
+                    handle_groq_error(e, asr_model)
+                except RateLimitError as e:
+                    handle_groq_error(e, asr_model)
+                    await interaction.followup.send(f"API limit reached during chunk processing. Returning processed chunks only.", ephemeral=True)
+                    await interaction.followup.send(f"Partial Transcript:\n```\n{full_transcript}\n```")
+                    return
+
+            await interaction.followup.send(f"Full Transcript:\n```\n{full_transcript}\n```")
+        else:
+            try:
+                with open(processed_path, "rb") as file:
+                    transcription_response = client.audio.transcriptions.create(
+                        file=(os.path.basename(processed_path), file.read()),
+                        model=asr_model,
+                        response_format=response_format,
+                        language=language,
+                        temperature=temperature,
+                        prompt=prompt,
+                    )
+                await interaction.followup.send(f"Transcript:\n```\n{transcription_response.text}\n```")
+            except AuthenticationError as e:
+                handle_groq_error(e, asr_model)
+            except RateLimitError as e:
+                handle_groq_error(e, asr_model)
+            except Exception as e:
+                await interaction.followup.send(f"An error occurred: {e}")
+
+        # Clean up
+        os.remove(file_path)
+        if split_status == "split":
+            for chunk_path in processed_path:
+                os.remove(chunk_path)
+
+    except Exception as e:
+        await interaction.followup.send(f"An error occurred: {e}")
+
+
+
 @bot.command(name="lyrics", description="Search for song lyrics.")
 async def lyrics(ctx, *, song_title: str):
     async with ctx.typing():
