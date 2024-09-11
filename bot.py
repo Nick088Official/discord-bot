@@ -1145,48 +1145,48 @@ async def summarize(interaction: discord.Interaction, text: str):
                 await interaction.response.send_message(f"Summary:\n```\n{summary}\n```")
             except Exception as e:
                 await interaction.response.send_message(f"An error occurred while processing the request: {e}")
-        elif selected_model == "llava-v1.5-7b-4096-preview":  # Use Groq LLaVA
-            image_url = None
-            if message.attachments:
-                attachment = message.attachments[0]
-                if attachment.content_type.startswith("image/"):
-                    if attachment.size <= 20 * 1024 * 1024: 
-                        image_url = attachment.url
-                    else:
-                        await message.reply("Image size too large (max 20MB).")
-                        return
-
-            api_messages = [  # Only the current message with image
-                {
-                    "role": "user", 
-                    "content": [
-                        {"type": "text", "text": message.content},
-                        {"type": "image_url", "image_url": {"url": image_url}} if image_url else {}
+            else:  # Use Groq for other models
+                if selected_model == "llava-v1.5-7b-4096-preview":
+                    # For LLaVA, only send the current message 
+                    image_url = None
+                    if message.attachments:
+                        attachment = message.attachments[0]
+                        if attachment.content_type.startswith("image/"):
+                            if attachment.size <= 20 * 1024 * 1024:
+                                image_url = attachment.url
+                            else:
+                                await message.reply("Image size too large (max 20MB).")
+                                return
+                    api_messages = [ 
+                        {
+                            "role": "user", 
+                            "content": [
+                                {"type": "text", "text": message.content},
+                                {"type": "image_url", "image_url": {"url": image_url}} if image_url else {}
+                            ]
+                        }
                     ]
-                }
-            ]
+                    chat_completion = client.chat.completions.create(
+                        messages=api_messages,
+                        model=selected_model
+                    )
+                    generated_text = chat_completion.choices[0].message.content
+                    await message.reply(generated_text.strip())
 
-            chat_completion = client.chat.completions.create(
-                messages=api_messages,
-                model=selected_model
-            )
-            generated_text = chat_completion.choices[0].message.content
-            await message.reply(generated_text.strip())
-        else: # Use Groq API for summarization
-            system_prompt = bot_settings["system_prompt"]
-            chat_completion = client.chat.completions.create(
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": f"Summarize the following text:\n\n{text}"}
-                ],
-                model=selected_model
-            )
-            summary = chat_completion.choices[0].message.content
+                else:  # Use Groq API for other models with system and context messages
+                    api_messages = [{"role": "system", "content": system_prompt}] + context_messages + [{"role": "user", "content": message.content}]
+                    chat_completion = client.chat.completions.create(
+                        messages=api_messages,
+                        model=selected_model
+                    )
+                    generated_text = chat_completion.choices[0].message.content
+                    await message.reply(generated_text.strip())
+                    summary = chat_completion.choices[0].message.content
 
-            # Log the interaction, not the text string
-            logging.info(f"User: {message} - Model: {selected_model} - Summary: {summary}")
+                    # Log the interaction, not the text string
+                    logging.info(f"User: {message} - Model: {selected_model} - Summary: {summary}")
 
-            await interaction.response.send_message(f"Summary:\n```\n{summary}\n```")
+                    await interaction.response.send_message(f"Summary:\n```\n{summary}\n```")
     except AuthenticationError as e:
         handle_groq_error(e, model)
     except RateLimitError as e:
