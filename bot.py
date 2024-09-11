@@ -1145,48 +1145,22 @@ async def summarize(interaction: discord.Interaction, text: str):
                 await interaction.response.send_message(f"Summary:\n```\n{summary}\n```")
             except Exception as e:
                 await interaction.response.send_message(f"An error occurred while processing the request: {e}")
-            else:  # Use Groq for other models
-                if selected_model == "llava-v1.5-7b-4096-preview":
-                    # For LLaVA, only send the current message 
-                    image_url = None
-                    if message.attachments:
-                        attachment = message.attachments[0]
-                        if attachment.content_type.startswith("image/"):
-                            if attachment.size <= 20 * 1024 * 1024:
-                                image_url = attachment.url
-                            else:
-                                await message.reply("Image size too large (max 20MB).")
-                                return
-                    api_messages = [ 
-                        {
-                            "role": "user", 
-                            "content": [
-                                {"type": "text", "text": message.content},
-                                {"type": "image_url", "image_url": {"url": image_url}} if image_url else {}
-                            ]
-                        }
-                    ]
-                    chat_completion = client.chat.completions.create(
-                        messages=api_messages,
-                        model=selected_model
-                    )
-                    generated_text = chat_completion.choices[0].message.content
-                    await message.reply(generated_text.strip())
 
-                else:  # Use Groq API for other models with system and context messages
-                    api_messages = [{"role": "system", "content": system_prompt}] + context_messages + [{"role": "user", "content": message.content}]
-                    chat_completion = client.chat.completions.create(
-                        messages=api_messages,
-                        model=selected_model
-                    )
-                    generated_text = chat_completion.choices[0].message.content
-                    await message.reply(generated_text.strip())
-                    summary = chat_completion.choices[0].message.content
+        else: # Use Groq API for summarization
+            system_prompt = bot_settings["system_prompt"]
+            chat_completion = client.chat.completions.create(
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": f"Summarize the following text:\n\n{text}"}
+                ],
+                model=selected_model
+            )
+            summary = chat_completion.choices[0].message.content
 
-                    # Log the interaction, not the text string
-                    logging.info(f"User: {message} - Model: {selected_model} - Summary: {summary}")
+            # Log the interaction, not the text string
+            logging.info(f"User: {message} - Model: {selected_model} - Summary: {summary}")
 
-                    await interaction.response.send_message(f"Summary:\n```\n{summary}\n```")
+            await interaction.response.send_message(f"Summary:\n```\n{summary}\n```")
     except AuthenticationError as e:
         handle_groq_error(e, model)
     except RateLimitError as e:
@@ -1662,7 +1636,44 @@ async def on_message(message: Message):
 
                 # Send the generated text as a reply to the user
                 await message.reply(generated_text.strip())
+            elif selected_model in gemini_models:
+                try:
+                    # Create a Gemini model instance (do this once, maybe outside the function)
+                    gemini_model = gemini.GenerativeModel(selected_model) 
 
+                    # Use the model instance to generate content
+                    response = gemini_model.generate_content( 
+                        f"{text}",
+                    )
+
+                    # Extract the summary from the response
+                    response = response.text
+                    await interaction.response.send_message(f"{response}")
+            if selected_model == "llava-v1.5-7b-4096-preview":  # LLaVA Groq SPECIFIC LOGIC
+                image_url = None
+                if message.attachments:
+                    attachment = message.attachments[0]
+                    if attachment.content_type.startswith("image/"):
+                        if attachment.size <= 20 * 1024 * 1024:
+                            image_url = attachment.url
+                        else:
+                            await message.reply("Image size too large (max 20MB).")
+                            return
+                api_messages = [  
+                    {
+                        "role": "user", 
+                        "content": [
+                            {"type": "text", "text": message.content},
+                            {"type": "image_url", "image_url": {"url": image_url}} if image_url else {}
+                        ]
+                    }
+                ]
+                chat_completion = client.chat.completions.create(
+                    messages=api_messages,
+                    model=selected_model
+                )
+                generated_text = chat_completion.choices[0].message.content
+                await message.reply(generated_text.strip())
             else:  # Use Groq for other models
                 api_messages = [{"role": "system", "content": system_prompt}] + context_messages + [{"role": "user", "content": message.content}]
                 chat_completion = client.chat.completions.create(
@@ -1686,8 +1697,8 @@ async def on_message(message: Message):
             handle_groq_error(e, model)
         except Exception as e:
             await message.channel.send(f"An error occurred: {e}")
-            print(e).channel.send(f"An error occurred: {e}")
             print(e)
+            
 async def generate_summary(channel: discord.TextChannel):
     """Generates a summary of the last 20 messages in the channel and sends it to the logging channel."""
     messages = []
