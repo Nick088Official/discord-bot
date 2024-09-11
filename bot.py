@@ -268,9 +268,6 @@ async def eval_code(interaction: discord.Interaction, code: str):
 
 # whisper related
 
-# Available models
-GROQ_ASR_MODELS = ["whisper-large-v3", "distil-whisper-large-v3-en"]
-
 # Allowed file extensions
 ALLOWED_FILE_EXTENSIONS = ["mp3", "mp4", "mpeg", "mpga", "m4a", "wav", "webm"]
 MAX_FILE_SIZE_MB = 25
@@ -290,15 +287,14 @@ def handle_groq_error(e, model_name):
     if isinstance(e, AuthenticationError):
         if isinstance(error_data, dict) and 'error' in error_data and 'message' in error_data['error']:
             error_message = error_data['error']['message']
-            await interaction.followup.send(error_message)
+            raise discord.app_commands.AppCommandError(error_message)
     elif isinstance(e, RateLimitError):
         if isinstance(error_data, dict) and 'error' in error_data and 'message' in error_data['error']:
             error_message = error_data['error']['message']
             error_message = re.sub(r'org_[a-zA-Z0-9]+', 'org_(censored)', error_message) 
-            await interaction.followup.send(error_message)
+            raise discord.app_commands.AppCommandError(error_message)
     else:
-        await interaction.followup.send(f"Error during Groq API call: {e}")
-
+        raise discord.app_commands.AppCommandError(f"Error during Groq API call: {e}")
 
 def split_audio(input_file_path, chunk_size_mb):
     chunk_size = chunk_size_mb * 1024 * 1024 
