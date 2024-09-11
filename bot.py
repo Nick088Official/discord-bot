@@ -1649,7 +1649,7 @@ async def on_message(message: Message):
                     # Extract the summary from the response
                     response = response.text
                     await interaction.response.send_message(f"{response}")
-            if selected_model == "llava-v1.5-7b-4096-preview":  # LLaVA Groq SPECIFIC LOGIC
+            elif selected_model == "llava-v1.5-7b-4096-preview":  # LLaVA Groq SPECIFIC LOGIC
                 image_url = None
                 if message.attachments:
                     attachment = message.attachments[0]
