@@ -284,11 +284,11 @@ def handle_groq_error(e, model_name):
             json_str = json_str.replace("'", '"') 
             error_data = json.loads(json_str)
 
-    if isinstance(e, AuthenticationError):
+    if isinstance(e, groq.AuthenticationError):
         if isinstance(error_data, dict) and 'error' in error_data and 'message' in error_data['error']:
             error_message = error_data['error']['message']
             raise discord.app_commands.AppCommandError(error_message)
-    elif isinstance(e, RateLimitError):
+    elif isinstance(e, groq.RateLimitError):
         if isinstance(error_data, dict) and 'error' in error_data and 'message' in error_data['error']:
             error_message = error_data['error']['message']
             error_message = re.sub(r'org_[a-zA-Z0-9]+', 'org_(censored)', error_message) 
