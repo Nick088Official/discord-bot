@@ -130,6 +130,56 @@ async def sync_commands(interaction: discord.Interaction):
     await bot.tree.sync()
     await interaction.response.send_message("Bot commands synced!", ephemeral=True)
 
+
+@bot.tree.command(name="botedit", description="Edit bot settings (Admin only)")
+@app_commands.checks.has_role(ADMIN_ROLE_ID) 
+async def botedit(interaction: discord.Interaction, 
+                  username: Optional[str] = None,
+                  app_name: Optional[str] = None,
+                  avatar: Optional[discord.Attachment] = None, 
+                  banner: Optional[discord.Attachment] = None):
+    """
+    Edit various bot settings (Admin only).
+
+    Usage: /botedit [username] [app_name] [avatar] [banner]
+
+    Example:
+    /botedit username="New Bot Name" 
+    /botedit app_name="My Cool App" avatar=<attach avatar image>
+    /botedit banner=<attach banner image> 
+    """
+    if not is_authorized(interaction, PermissionLevel.ADMINISTRATOR): # Require administrator permission
+        await interaction.response.send_message("You are not authorized to use this command.", ephemeral=True)
+        return
+        
+    await interaction.response.defer(ephemeral=True) 
+
+    try:
+        updated_fields = []
+        if username:
+            await bot.user.edit(username=username)
+            updated_fields.append(f"Username changed to '{username}'")
+        if app_name:
+            await bot.application_info().edit(name=app_name)
+            updated_fields.append(f"Application name changed to '{app_name}'")
+        if avatar:
+            avatar_data = await avatar.read()
+            await bot.user.edit(avatar=avatar_data)
+            updated_fields.append("Avatar updated")
+        if banner:
+            banner_data = await banner.read()
+            await bot.user.edit(banner=banner_data)
+            updated_fields.append("Banner updated")
+
+        if updated_fields:
+            await interaction.followup.send("\n".join(updated_fields))
+        else:
+            await interaction.followup.send("No settings were changed.")
+
+    except discord.HTTPException as e:
+        await interaction.followup.send(f"An error occurred: {e}")
+        logging.error(f"Error editing bot settings: {e}")
+
 MAX_FILE_SIZE = 100 * 1024 * 1024 
 @bot.tree.command(name="image_to_gif", description="convert an image to a gif")
 async def image_to_gif(interaction: discord.Interaction, image: discord.Attachment):
