@@ -314,11 +314,9 @@ def split_audio(input_file_path, chunk_size_mb):
 
 
 def check_file(input_file_path):
-    if not input_file_path:
-        raise discord.app_commands.AppCommandError("No audio/video file provided.")
 
     if not audio_file.content_type.startswith(("audio/", "video/")):
-        await interaction.response.send_message("Invalid file type. Please upload an audio or video file.", ephemeral=True)
+        raise discord.app_commands.AppCommandError("Invalid file type. Please upload an audio or video file.")
         return
 
     file_size_mb = os.path.getsize(input_file_path) / (1024 * 1024)
