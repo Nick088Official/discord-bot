@@ -316,6 +316,7 @@ def split_audio(input_file_path, chunk_size_mb):
 def check_file(input_file_path):
     
     # Validate file extension (video or audio)
+    print(input_file_path)
     file_extension = os.path.splitext(input_file_path.filename)[1][1:].lower()  # Get extension without dot
     if file_extension not in ALLOWED_FILE_EXTENSIONS:
         raise discord.app_commands.AppCommandError(f"Invalid file type (.{file_extension}). Allowed types: {', '.join(ALLOWED_FILE_EXTENSIONS)}")
