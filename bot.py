@@ -130,6 +130,7 @@ async def sync_commands(interaction: discord.Interaction):
     await bot.tree.sync()
     await interaction.response.send_message("Bot commands synced!", ephemeral=True)
 
+from typing import Optional 
 
 @bot.tree.command(name="botedit", description="Edit bot settings (Admin only)")
 async def botedit(interaction: discord.Interaction, 
