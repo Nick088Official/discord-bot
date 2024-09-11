@@ -146,7 +146,6 @@ from typing import Optional
 # ... (rest of your code)
 
 @bot.tree.command(name="edit_profile", description="Edit bot profile (Admin only).")
-@app_commands.checks.has_role(ADMIN_ROLE_ID)
 async def edit_profile(interaction: discord.Interaction,
                   username: Optional[str] = None,
                   app_name: Optional[str] = None,
