@@ -327,7 +327,7 @@ def check_file(input_file_path):
         raise discord.app_commands.AppCommandError(f"Invalid file type (.{file_extension}). Allowed types: {', '.join(ALLOWED_FILE_EXTENSIONS)}")
 
     if file_size_mb > MAX_FILE_SIZE_MB:
-       logging.warning(f"File size too large ({file_size_mb:.2f} MB). Attempting to downsample to 16kHz MP3 128kbps. Maximum size allowed: {MAX_FILE_SIZE_MB} MB")
+        logging.warning(f"File size too large ({file_size_mb:.2f} MB). Attempting to downsample to 16kHz MP3 128kbps. Maximum size allowed: {MAX_FILE_SIZE_MB} MB")
 
         output_file_path = os.path.splitext(input_file_path)[0] + "_downsampled.mp3"
         try:
