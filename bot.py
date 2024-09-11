@@ -1671,7 +1671,7 @@ async def on_message(message: Message):
                         model=selected_model
                     )
                     generated_text = chat_completion.choices[0].message.content
-                    await message.reply(f"{'Only one image can be processed per request, processing only your first image:\n' if len(message.attachments) > 1 and selected_model == 'llava-v1.5-7b-4096-preview' else None} {generated_text.strip()}")
+                    await message.reply(f"{'Only one image can be processed per request, processing only your first image:' if len(message.attachments) > 1 and selected_model == 'llava-v1.5-7b-4096-preview' else None}\n{generated_text.strip()}")
 
                 except AuthenticationError as e:
                     handle_groq_error(e, selected_model)
