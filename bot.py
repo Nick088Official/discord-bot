@@ -168,10 +168,12 @@ async def edit_profile(interaction: discord.Interaction,
             await bot.user.edit(username=username)
             updated_fields.append(f"Username changed to '{username}'")
         if app_name:
-            await bot.application_info().edit(name=app_name)
+            app_info = await bot.application_info()  # Await the coroutine
+            await app_info.edit(name=app_name)
             updated_fields.append(f"Application name changed to '{app_name}'")
         if description:
-            await bot.application_info().edit(description=description)
+            app_info = await bot.application_info()  # Await the coroutine
+            await app_info.edit(description=description)
             updated_fields.append(f"Description changed to '{description}'")
         if avatar:
             avatar_data = await avatar.read()
