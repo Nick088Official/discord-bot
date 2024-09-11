@@ -132,7 +132,6 @@ async def sync_commands(interaction: discord.Interaction):
 
 
 @bot.tree.command(name="botedit", description="Edit bot settings (Admin only)")
-@app_commands.checks.has_role(ADMIN_ROLE_ID) 
 async def botedit(interaction: discord.Interaction, 
                   username: Optional[str] = None,
                   app_name: Optional[str] = None,
