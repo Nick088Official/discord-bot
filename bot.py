@@ -1146,31 +1146,30 @@ async def summarize(interaction: discord.Interaction, text: str):
             except Exception as e:
                 await interaction.response.send_message(f"An error occurred while processing the request: {e}")
         elif selected_model == "llava-v1.5-7b-4096-preview":  # Use Groq LLaVA
-                image_url = None
-                if message.attachments:
-                    attachment = message.attachments[0]
-                    if attachment.content_type.startswith("image/"):
-                        if attachment.size <= 20 * 1024 * 1024:  # Check image size (20MB limit)
-                            image_url = attachment.url
-                        else:
-                            await message.reply("Image size too large (max 20MB).")
-                            return
+            image_url = None
+            if message.attachments:
+                attachment = message.attachments[0]
+                if attachment.content_type.startswith("image/"):
+                    if attachment.size <= 20 * 1024 * 1024: 
+                        image_url = attachment.url
+                    else:
+                        await message.reply("Image size too large (max 20MB).")
+                        return
 
-                api_messages = [
-                    {"role": "system", "content": system_prompt},
-                    *context_messages,
-                    {"role": "user", "content": [
-                        {"type": "text", "text": message.content},
-                        {"type": "image_url", "image_url": {"url": image_url}} if image_url else {}
-                    ]}
-                ]
+            api_messages = [  # Only include the system prompt and the current message
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": [
+                    {"type": "text", "text": message.content},
+                    {"type": "image_url", "image_url": {"url": image_url}} if image_url else {}
+                ]}
+            ]
 
-                chat_completion = client.chat.completions.create(
-                    messages=api_messages,
-                    model=selected_model
-                )
-                generated_text = chat_completion.choices[0].message.content
-                await message.reply(generated_text.strip())
+            chat_completion = client.chat.completions.create(
+                messages=api_messages,
+                model=selected_model
+            )
+            generated_text = chat_completion.choices[0].message.content
+            await message.reply(generated_text.strip()) 
         else: # Use Groq API for summarization
             system_prompt = bot_settings["system_prompt"]
             chat_completion = client.chat.completions.create(
