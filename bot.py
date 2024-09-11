@@ -313,7 +313,7 @@ async def kill(interaction: discord.Interaction, user: str):
 
 import asyncio
 from datetime import datetime, timedelta
-
+import re
 
 @bot.tree.command(name="reminder", description="Set a reminder.")
 async def reminder(interaction: discord.Interaction, time: str, *, message: str):
@@ -323,31 +323,44 @@ async def reminder(interaction: discord.Interaction, time: str, *, message: str)
     Usage: /reminder <time> <message>
 
     Time format:
-    - 5s (seconds)
-    - 10m (minutes)
-    - 1h (hour)
-    - 2d (days)
+    - 5s / 5 seconds
+    - 10m / 10 minutes
+    - 1h / 1 hour
+    - 2d / 2 days
+    - 1d 3h / 1 day 3 hours (multiple units allowed)
 
     Example: /reminder 1h Study for the exam
+           /reminder 30 minutes Take a break
+           /reminder 2d 6h Book a flight
     """
-    time_unit = time[-1]
-    time_amount = int(time[:-1])
-    if time_unit == "s":
-        delta = timedelta(seconds=time_amount)
-    elif time_unit == "m":
-        delta = timedelta(minutes=time_amount)
-    elif time_unit == "h":
-        delta = timedelta(hours=time_amount)
-    elif time_unit == "d":
-        delta = timedelta(days=time_amount)
-    else:
-        await interaction.response.send_message("Invalid time format. Use s/m/h/d for seconds/minutes/hours/days.", ephemeral=True)
-        logging.error(f"User: {interaction.user} - Error: Invalid time format. Use s/m/h/d for seconds/minutes/hours/days")
-        return
+    time_regex = re.compile(r"(\d+)\s*(s|sec|seconds|m|min|minutes|h|hour|hours|d|day|days)")
+    time_parts = time.split()
+    delta = timedelta()
+    valid_units = ["s", "sec", "seconds", "m", "min", "minutes", "h", "hour", "hours", "d", "day", "days"]
 
-    # Send confirmation message in chat
-    await interaction.response.send_message(f"Reminder set for {time} from now.") 
-    logging.info(f"User:{interaction.user} - set a timer for {time}")
+    for part in time_parts:
+        match = time_regex.match(part)
+        if not match:
+            await interaction.response.send_message(f"Invalid time format in '{part}'. Please use a valid format like '1h', '30m', '2d 6h'.", ephemeral=True)
+            logging.error(f"User: {interaction.user} - Error: Invalid time format in '{part}'.") 
+            return
+
+        time_amount = int(match.group(1))
+        time_unit = match.group(2).lower()
+
+        if time_unit not in valid_units:  # Check for valid unit
+            await interaction.response.send_message(f"Invalid time unit '{time_unit}'. Please use s/m/h/d or their full names.", ephemeral=True)
+            logging.error(f"User: {interaction.user} - Error: Invalid time unit '{time_unit}'.")
+            return
+
+        if time_unit in ("s", "sec", "seconds"):
+            delta += timedelta(seconds=time_amount)
+        elif time_unit in ("m", "min", "minutes"):
+            delta += timedelta(minutes=time_amount)
+        elif time_unit in ("h", "hour", "hours"):
+            delta += timedelta(hours=time_amount)
+        elif time_unit in ("d", "day", "days"):
+            delta += timedelta(days=time_amount)
 
     # Wait for the specified time
     await asyncio.sleep(delta.total_seconds())
