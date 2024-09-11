@@ -353,7 +353,7 @@ def check_file(input_file_path):
 
             return output_file_path, None
         except subprocess.CalledProcessError as e:
-            await interaction.followup.send(f"Error during downsampling: {e}")
+            raise discord.app_commands.AppCommandError(f"Error during downsampling: {e}")
     return input_file_path, None
 
 @bot.tree.command(name="transcript", description="Transcribe an audio file using the Groq Whisper model.")
