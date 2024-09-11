@@ -1156,12 +1156,14 @@ async def summarize(interaction: discord.Interaction, text: str):
                         await message.reply("Image size too large (max 20MB).")
                         return
 
-            api_messages = [  # Only include the system prompt and the current message
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": [
-                    {"type": "text", "text": message.content},
-                    {"type": "image_url", "image_url": {"url": image_url}} if image_url else {}
-                ]}
+            api_messages = [  # Only the current message with image
+                {
+                    "role": "user", 
+                    "content": [
+                        {"type": "text", "text": message.content},
+                        {"type": "image_url", "image_url": {"url": image_url}} if image_url else {}
+                    ]
+                }
             ]
 
             chat_completion = client.chat.completions.create(
@@ -1169,7 +1171,7 @@ async def summarize(interaction: discord.Interaction, text: str):
                 model=selected_model
             )
             generated_text = chat_completion.choices[0].message.content
-            await message.reply(generated_text.strip()) 
+            await message.reply(generated_text.strip())
         else: # Use Groq API for summarization
             system_prompt = bot_settings["system_prompt"]
             chat_completion = client.chat.completions.create(
