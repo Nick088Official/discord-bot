@@ -415,9 +415,9 @@ async def transcript(interaction: discord.Interaction,
                             prompt=prompt,
                         )
                     full_transcript += transcription_response.text
-                except AuthenticationError as e:
+                except groq.AuthenticationError as e:
                     handle_groq_error(e, asr_model)
-                except RateLimitError as e:
+                except groq.RateLimitError as e:
                     handle_groq_error(e, asr_model)
                     await interaction.followup.send(f"API limit reached during chunk processing. Returning processed chunks only.", ephemeral=True)
                     await interaction.followup.send(f"Partial Transcript:\n```\n{full_transcript}\n```")
@@ -436,9 +436,9 @@ async def transcript(interaction: discord.Interaction,
                         prompt=prompt,
                     )
                 await interaction.followup.send(f"Transcript:\n```\n{transcription_response.text}\n```")
-            except AuthenticationError as e:
+            except groq.AuthenticationError as e:
                 handle_groq_error(e, asr_model)
-            except RateLimitError as e:
+            except groq.RateLimitError as e:
                 handle_groq_error(e, asr_model)
             except Exception as e:
                 await interaction.followup.send(f"An error occurred: {e}")
