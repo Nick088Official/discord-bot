@@ -396,6 +396,8 @@ async def reminder(interaction: discord.Interaction, time: str, *, message: str)
            /reminder 30 minutes Take a break
            /reminder 2d 6h Book a flight
     """
+    await interaction.response.defer()  # Send an initial response 
+    
     time_regex = re.compile(r"(\d+)\s*(s|sec|seconds|m|min|minutes|h|hour|hours|d|day|days)")
     time_parts = time.split()
     delta = timedelta()
@@ -439,6 +441,10 @@ async def reminder(interaction: discord.Interaction, time: str, *, message: str)
 
         i += 1  # Move to the next part
 
+    # Send confirmation message in chat
+    await interaction.response.send_message(f"Reminder set for {time} from now.") 
+    logging.info(f"User:{interaction.user} - set a timer for {time}")
+    
     # Wait for the specified time
     await asyncio.sleep(delta.total_seconds())
 
