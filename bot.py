@@ -315,7 +315,7 @@ def split_audio(input_file_path, chunk_size_mb):
 
 def check_file(input_file_path):
 
-    if not audio_file.content_type.startswith(("audio/", "video/")):
+    if not input_file_path.content_type.startswith(("audio/", "video/")):
         raise discord.app_commands.AppCommandError("Invalid file type. Please upload an audio or video file.")
         return
 
