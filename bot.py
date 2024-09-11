@@ -400,13 +400,25 @@ async def reminder(interaction: discord.Interaction, time: str, *, message: str)
     time_parts = time.split()
     delta = timedelta()
     valid_units = ["s", "sec", "seconds", "m", "min", "minutes", "h", "hour", "hours", "d", "day", "days"]
+    i = 0 
 
-    for part in time_parts:
-        match = time_regex.match(part)
+    while i < len(time_parts):
+        match = time_regex.match(time_parts[i])
         if not match:
-            await interaction.response.send_message(f"Invalid time format in '{part}'. Please use a valid format like '1h', '30m', '2d 6h'.", ephemeral=True)
-            logging.error(f"User: {interaction.user} - Error: Invalid time format in '{part}'.") 
-            return
+            # Try combining with the next part if it's a unit 
+            if i + 1 < len(time_parts) and time_parts[i + 1].lower() in valid_units:
+                combined_part = time_parts[i] + time_parts[i + 1]
+                match = time_regex.match(combined_part)
+                if match:
+                    i += 1  # Skip the next part as it's combined
+                else:
+                    await interaction.response.send_message(f"Invalid time format in '{time_parts[i]}'. Please use a valid format like '1h', '30m', '2d 6h', '1 second'.", ephemeral=True)
+                    logging.error(f"User: {interaction.user} - Error: Invalid time format in '{time_parts[i]}'.")
+                    return
+            else:
+                await interaction.response.send_message(f"Invalid time format in '{time_parts[i]}'. Please use a valid format like '1h', '30m', '2d 6h', '1 second'.", ephemeral=True)
+                logging.error(f"User: {interaction.user} - Error: Invalid time format in '{time_parts[i]}'.")
+                return
 
         time_amount = int(match.group(1))
         time_unit = match.group(2).lower()
@@ -425,10 +437,11 @@ async def reminder(interaction: discord.Interaction, time: str, *, message: str)
         elif time_unit in ("d", "day", "days"):
             delta += timedelta(days=time_amount)
 
+        i += 1  # Move to the next part
+
     # Wait for the specified time
     await asyncio.sleep(delta.total_seconds())
 
-    # Send reminder message in chat
     await interaction.channel.send(f"<@{interaction.user.id}> ⏰ Reminder: {message}") 
     logging.info(f"User:{interaction.user} - Reminder: {message}")
 
