@@ -1637,14 +1637,19 @@ async def on_message(message: Message):
                 # Send the generated text as a reply to the user
                 await message.reply(generated_text.strip())
 
-            elif selected_model == "llava-v1.5-7b-4096-preview" or selected_model in groq_models:  # Groq Models (LLaVA and others)
+            elif selected_model in groq_models:  # Groq Models (LLaVA and others)
                 try:
-                    image_url = None
                     if selected_model == "llava-v1.5-7b-4096-preview": # LLaVA Groq SPECIFIC LOGIC 
+                        # Check for multi-turn conversation attempt
+                        if is_reply_to_bot and messages and messages[-1]["role"] == "assistant": 
+                            await message.reply("For this model, multi-turn conversations are not currently supported. Only one user message is allowed per request.")
+                            return
+
+                        image_url = None
                         if message.attachments:
                             attachment = message.attachments[0]
                             if attachment.content_type.startswith("image/"):
-                                if attachment.size <= 20 * 1024 * 1024:
+                                if attachment.size <= 20 * 1024 * 1024: # 20mb max
                                     image_url = attachment.url
                                 else:
                                     await message.reply("Image size too large (max 20MB).")
@@ -1666,7 +1671,7 @@ async def on_message(message: Message):
                         model=selected_model
                     )
                     generated_text = chat_completion.choices[0].message.content
-                    await message.reply(generated_text.strip())
+                    await message.reply({'Only one image can be processed per request, processing only your first image:\n' if len(message.attachments) > 1 and selected_model == "llava-v1.5-7b-4096-preview" else None} generated_text.strip())
 
                 except AuthenticationError as e:
                     handle_groq_error(e, selected_model)
