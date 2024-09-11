@@ -356,6 +356,19 @@ def check_file(input_file_path):
             raise discord.app_commands.AppCommandError(f"Error during downsampling: {e}")
     return input_file_path, None
 
+@languages.autocomplete('language')
+async def language_autocomplete(
+    interaction: discord.Interaction, 
+    current: str
+) -> list[app_commands.Choice[str]]:
+    """Autocomplete for the language option."""
+    matching_languages = [
+        app_commands.Choice(name=lang, value=code)
+        for lang, code in LANGUAGE_CODES.items()
+        if current.lower() in lang.lower()
+    ]
+    return matching_languages[:25]  # Limit to 25 choices
+
 @bot.tree.command(name="transcript", description="Transcribe an audio file using the Groq Whisper model.")
 @app_commands.describe(
     audio_file="The audio file to transcribe.",
