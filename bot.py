@@ -6,6 +6,7 @@ from discord.ext import commands
 from discord import app_commands
 from discord import Message, Embed
 from dotenv import load_dotenv
+import groq
 from groq import Groq
 from collections import defaultdict
 import requests
