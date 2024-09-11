@@ -37,8 +37,32 @@ GROQ_API_KEY = os.getenv('GROQ_API_KEY')
 MVSEP_API_KEY = os.getenv('MVSEP_API_KEY')
 GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY') 
 GENIUS_API_TOKEN = os.getenv('GENIUS_API_TOKEN')
+
 # Initialize Groq client
 client = Groq(api_key=GROQ_API_KEY)
+
+def handle_groq_error(e, model_name):
+    error_data = e.args[0]
+
+    if isinstance(error_data, str):
+        json_match = re.search(r'(\{.*\})', error_data)
+        if json_match:
+            json_str = json_match.group(1)
+            json_str = json_str.replace("'", '"') 
+            error_data = json.loads(json_str)
+
+    if isinstance(e, AuthenticationError):
+        if isinstance(error_data, dict) and 'error' in error_data and 'message' in error_data['error']:
+            error_message = error_data['error']['message']
+            raise discord.app_commands.AppCommandError(error_message)
+    elif isinstance(e, RateLimitError):
+        if isinstance(error_data, dict) and 'error' in error_data and 'message' in error_data['error']:
+            error_message = error_data['error']['message']
+            error_message = re.sub(r'org_[a-zA-Z0-9]+', 'org_(censored)', error_message) 
+            raise discord.app_commands.AppCommandError(error_message)
+    else:
+        raise discord.app_commands.AppCommandError(f"Error during Groq API call: {e}")
+
 # Initialize the Google Generative AI client
 gemini.configure(api_key=GOOGLE_API_KEY)
 
@@ -272,29 +296,6 @@ async def eval_code(interaction: discord.Interaction, code: str):
 ALLOWED_FILE_EXTENSIONS = ["mp3", "mp4", "mpeg", "mpga", "m4a", "wav", "webm"]
 MAX_FILE_SIZE_MB = 25
 CHUNK_SIZE_MB = 25
-
-
-def handle_groq_error(e, model_name):
-    error_data = e.args[0]
-
-    if isinstance(error_data, str):
-        json_match = re.search(r'(\{.*\})', error_data)
-        if json_match:
-            json_str = json_match.group(1)
-            json_str = json_str.replace("'", '"') 
-            error_data = json.loads(json_str)
-
-    if isinstance(e, AuthenticationError):
-        if isinstance(error_data, dict) and 'error' in error_data and 'message' in error_data['error']:
-            error_message = error_data['error']['message']
-            raise discord.app_commands.AppCommandError(error_message)
-    elif isinstance(e, RateLimitError):
-        if isinstance(error_data, dict) and 'error' in error_data and 'message' in error_data['error']:
-            error_message = error_data['error']['message']
-            error_message = re.sub(r'org_[a-zA-Z0-9]+', 'org_(censored)', error_message) 
-            raise discord.app_commands.AppCommandError(error_message)
-    else:
-        raise discord.app_commands.AppCommandError(f"Error during Groq API call: {e}")
 
 def split_audio(input_file_path, chunk_size_mb):
     chunk_size = chunk_size_mb * 1024 * 1024 
