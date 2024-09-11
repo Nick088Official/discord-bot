@@ -436,7 +436,7 @@ async def transcript(interaction: discord.Interaction,
                         temperature=temperature,
                         prompt=prompt,
                     )
-                await interaction.followup.send(f"Transcript:\n```\n{transcription_response.text}\n```")
+                await interaction.followup.send(f"Transcript:\n```\n{transcription_response}\n```")
             except groq.AuthenticationError as e:
                 handle_groq_error(e, asr_model)
             except groq.RateLimitError as e:
