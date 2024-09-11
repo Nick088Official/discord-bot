@@ -472,7 +472,7 @@ def check_file(input_file_path):
         discord.app_commands.Choice(name="Sundanese", value="su"),
     ],
     response_format=[
-        discord.app_commands.Choice(mame="text", value="text"),
+        discord.app_commands.Choice(name="text", value="text"),
         discord.app_commands.Choice(name="json", value="json"),
         discord.app_commands.Choice(name="verbose_json", value="verbose_json"),
     ]
