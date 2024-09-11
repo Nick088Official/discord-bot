@@ -1153,7 +1153,7 @@ async def summarize(interaction: discord.Interaction, text: str):
                         if attachment.size <= 20 * 1024 * 1024:  # Check image size (20MB limit)
                             image_url = attachment.url
                         else:
-                            raise discord.app_commands.AppCommandError("Image size too large (max 20MB).")
+                            await message.reply("Image size too large (max 20MB).")
                             return
 
                 api_messages = [
