@@ -1621,8 +1621,8 @@ async def on_message(message: Message):
             context_messages = messages[-context_messages_num:]
 
             if selected_model in local_models:  # Use LangChain Ollama for local models
-                # Initialize LangChain Ollama LLM without stream argument
-                llm = Ollama(model=selected_model)  # Removed stream=True
+                # Initialize LangChain Ollama LLM
+                llm = Ollama(model=selected_model)
 
                 # Initialize conversation chain with memory
                 memory = ConversationBufferMemory()
@@ -1636,54 +1636,61 @@ async def on_message(message: Message):
 
                 # Send the generated text as a reply to the user
                 await message.reply(generated_text.strip())
-            elif selected_model == "llava-v1.5-7b-4096-preview":  # LLaVA Groq SPECIFIC LOGIC
-                image_url = None
-                if message.attachments:
-                    attachment = message.attachments[0]
-                    if attachment.content_type.startswith("image/"):
-                        if attachment.size <= 20 * 1024 * 1024:
-                            image_url = attachment.url
-                        else:
-                            await message.reply("Image size too large (max 20MB).")
-                            return
-                api_messages = [  
-                    {
-                        "role": "user", 
-                        "content": [
-                            {"type": "text", "text": message.content},
-                            {"type": "image_url", "image_url": {"url": image_url}} if image_url else {}
-                        ]
-                    }
-                ]
-                chat_completion = client.chat.completions.create(
-                    messages=api_messages,
-                    model=selected_model
-                )
-                generated_text = chat_completion.choices[0].message.content
-                await message.reply(generated_text.strip())
-            elif selected_model in gemini_models:
+
+            elif selected_model == "llava-v1.5-7b-4096-preview" or selected_model in groq_models:  # Groq Models (LLaVA and others)
                 try:
-                    # Create a Gemini model instance (do this once, maybe outside the function)
+                    image_url = None
+                    if selected_model == "llava-v1.5-7b-4096-preview": # LLaVA Groq SPECIFIC LOGIC 
+                        if message.attachments:
+                            attachment = message.attachments[0]
+                            if attachment.content_type.startswith("image/"):
+                                if attachment.size <= 20 * 1024 * 1024:
+                                    image_url = attachment.url
+                                else:
+                                    await message.reply("Image size too large (max 20MB).")
+                                    return
+                        api_messages = [  
+                            {
+                                "role": "user", 
+                                "content": [
+                                    {"type": "text", "text": message.content},
+                                    {"type": "image_url", "image_url": {"url": image_url}} if image_url else {}
+                                ]
+                            }
+                        ]
+                    else:  # Use Groq API for other models
+                        api_messages = [{"role": "system", "content": system_prompt}] + context_messages + [{"role": "user", "content": message.content}]
+
+                    chat_completion = client.chat.completions.create(
+                        messages=api_messages,
+                        model=selected_model
+                    )
+                    generated_text = chat_completion.choices[0].message.content
+                    await message.reply(generated_text.strip())
+
+                except AuthenticationError as e:
+                    handle_groq_error(e, selected_model)
+                except RateLimitError as e:
+                    handle_groq_error(e, selected_model)
+
+            elif selected_model in gemini_models:  # Gemini Models
+                try:
+                    # Create a Gemini model instance 
                     gemini_model = gemini.GenerativeModel(selected_model) 
 
                     # Use the model instance to generate content
                     response = gemini_model.generate_content( 
-                        f"{text}",
+                        f"{message.content}"  # Use message.content here 
                     )
 
-                    # Extract the summary from the response
-                    response = response.text
-                    await interaction.response.send_message(f"{response}")
-            else:  # Use Groq for other models
-                api_messages = [{"role": "system", "content": system_prompt}] + context_messages + [{"role": "user", "content": message.content}]
-                chat_completion = client.chat.completions.create(
-                    messages=api_messages,
-                    model=selected_model
-                )
-                generated_text = chat_completion.choices[0].message.content
-                await message.reply(generated_text.strip()) 
+                    # Extract the response text
+                    generated_text = response.text
+                    await message.reply(generated_text) 
 
-            # Logging and debugging
+                except Exception as e: 
+                    await message.channel.send(f"An error occurred with Gemini: {e}")
+
+            # Logging and debugging (now outside the model-specific blocks)
             logging.info(f"User: {message.author} - Message: {message.content} - Generated Text: {generated_text}")
             print(f"user:{message.author}\n message:{message.content}\n output:{generated_text}")
 
@@ -1691,11 +1698,8 @@ async def on_message(message: Message):
             messages.append({"role": "user", "content": message.content})
             messages.append({"role": "assistant", "content": generated_text.strip()})
             conversation_data[channel_id]["messages"] = messages[-10:]
-        except AuthenticationError as e:
-            handle_groq_error(e, model)
-        except RateLimitError as e:
-            handle_groq_error(e, model)
-        except Exception as e:
+
+        except Exception as e:  # General exception handling 
             await message.channel.send(f"An error occurred: {e}")
             print(e)
             
