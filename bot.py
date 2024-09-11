@@ -356,7 +356,7 @@ def check_file(input_file_path):
             raise discord.app_commands.AppCommandError(f"Error during downsampling: {e}")
     return input_file_path, None
 
-@languages.autocomplete('language')
+@transcript.autocomplete('language')
 async def language_autocomplete(
     interaction: discord.Interaction, 
     current: str
