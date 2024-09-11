@@ -132,27 +132,36 @@ async def sync_commands(interaction: discord.Interaction):
 
 from typing import Optional 
 
-@bot.tree.command(name="botedit", description="Edit bot settings (Admin only)")
-async def botedit(interaction: discord.Interaction, 
+import discord
+from discord.ext import commands
+from discord import app_commands
+import asyncio
+import os
+import subprocess
+import logging
+from datetime import timedelta
+import re
+from typing import Optional  
+
+# ... (rest of your code)
+
+@bot.tree.command(name="edit_profile", description="Edit bot profile (Admin only).")
+@app_commands.checks.has_role(ADMIN_ROLE_ID)
+async def edit_profile(interaction: discord.Interaction,
                   username: Optional[str] = None,
                   app_name: Optional[str] = None,
-                  avatar: Optional[discord.Attachment] = None, 
+                  description: Optional[str] = None,  # Add description parameter
+                  avatar: Optional[discord.Attachment] = None,
                   banner: Optional[discord.Attachment] = None):
     """
     Edit various bot settings (Admin only).
 
-    Usage: /botedit [username] [app_name] [avatar] [banner]
+    Usage: /edit_profile [username] [app_name] [description] [avatar] [banner]
 
     Example:
-    /botedit username="New Bot Name" 
-    /botedit app_name="My Cool App" avatar=<attach avatar image>
-    /botedit banner=<attach banner image> 
+    /edit_profile username="New Bot Name"
     """
-    if not is_authorized(interaction, PermissionLevel.ADMINISTRATOR): # Require administrator permission
-        await interaction.response.send_message("You are not authorized to use this command.", ephemeral=True)
-        return
-        
-    await interaction.response.defer(ephemeral=True) 
+    await interaction.response.defer(ephemeral=True)
 
     try:
         updated_fields = []
@@ -162,6 +171,9 @@ async def botedit(interaction: discord.Interaction,
         if app_name:
             await bot.application_info().edit(name=app_name)
             updated_fields.append(f"Application name changed to '{app_name}'")
+        if description:
+            await bot.application_info().edit(description=description)
+            updated_fields.append(f"Description changed to '{description}'")
         if avatar:
             avatar_data = await avatar.read()
             await bot.user.edit(avatar=avatar_data)
