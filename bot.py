@@ -25,7 +25,6 @@ from contextlib import redirect_stdout
 import aiohttp
 import lyricsgenius
 from timeit import default_timer as timer 
-from google.oauth2 import service_account
 from PIL import Image
 import yt_dlp
 from enum import Enum
