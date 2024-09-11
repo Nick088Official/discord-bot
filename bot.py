@@ -314,13 +314,6 @@ def split_audio(input_file_path, chunk_size_mb):
 
 
 def check_file(input_file_path):
-    
-    # Validate file extension (video or audio)
-    print(input_file_path)
-    file_extension = os.path.splitext(input_file_path.filename)[1][1:].lower()  # Get extension without dot
-    if file_extension not in ALLOWED_FILE_EXTENSIONS:
-        raise discord.app_commands.AppCommandError(f"Invalid file type (.{file_extension}). Allowed types: {', '.join(ALLOWED_FILE_EXTENSIONS)}")
-        return
 
     file_size_mb = os.path.getsize(input_file_path) / (1024 * 1024)
     file_extension = input_file_path.split(".")[-1].lower()
@@ -390,7 +383,11 @@ async def transcript(interaction: discord.Interaction,
                   temperature: Optional[float] = 0.0,
                   prompt: Optional[str] = None):
 
-
+    file_extension = os.path.splitext(audio_file.filename)[1][1:].lower()  # Get extension without dot
+    if file_extension not in ALLOWED_FILE_EXTENSIONS:
+        await interaction.response.send_message(f"Invalid file type (.{file_extension}). Allowed types: {', '.join(ALLOWED_FILE_EXTENSIONS)}", ephemeral=True)
+        return
+    
     if not (0.0 <= temperature <= 1.0):
         await interaction.response.send_message(
             "Invalid temperature. Please choose a value between 0.0 and 1.0.", ephemeral=True
