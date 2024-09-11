@@ -1636,19 +1636,6 @@ async def on_message(message: Message):
 
                 # Send the generated text as a reply to the user
                 await message.reply(generated_text.strip())
-            elif selected_model in gemini_models:
-                try:
-                    # Create a Gemini model instance (do this once, maybe outside the function)
-                    gemini_model = gemini.GenerativeModel(selected_model) 
-
-                    # Use the model instance to generate content
-                    response = gemini_model.generate_content( 
-                        f"{text}",
-                    )
-
-                    # Extract the summary from the response
-                    response = response.text
-                    await interaction.response.send_message(f"{response}")
             elif selected_model == "llava-v1.5-7b-4096-preview":  # LLaVA Groq SPECIFIC LOGIC
                 image_url = None
                 if message.attachments:
@@ -1674,6 +1661,19 @@ async def on_message(message: Message):
                 )
                 generated_text = chat_completion.choices[0].message.content
                 await message.reply(generated_text.strip())
+            elif selected_model in gemini_models:
+                try:
+                    # Create a Gemini model instance (do this once, maybe outside the function)
+                    gemini_model = gemini.GenerativeModel(selected_model) 
+
+                    # Use the model instance to generate content
+                    response = gemini_model.generate_content( 
+                        f"{text}",
+                    )
+
+                    # Extract the summary from the response
+                    response = response.text
+                    await interaction.response.send_message(f"{response}")
             else:  # Use Groq for other models
                 api_messages = [{"role": "system", "content": system_prompt}] + context_messages + [{"role": "user", "content": message.content}]
                 chat_completion = client.chat.completions.create(
