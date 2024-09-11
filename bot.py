@@ -6,8 +6,7 @@ from discord.ext import commands
 from discord import app_commands
 from discord import Message, Embed
 from dotenv import load_dotenv
-import groq
-from groq import Groq
+from groq import Groq, AuthenticationError, RateLimitError
 from collections import defaultdict
 import requests
 from datetime import datetime, timedelta
@@ -285,11 +284,11 @@ def handle_groq_error(e, model_name):
             json_str = json_str.replace("'", '"') 
             error_data = json.loads(json_str)
 
-    if isinstance(e, groq.AuthenticationError):
+    if isinstance(e, AuthenticationError):
         if isinstance(error_data, dict) and 'error' in error_data and 'message' in error_data['error']:
             error_message = error_data['error']['message']
             raise discord.app_commands.AppCommandError(error_message)
-    elif isinstance(e, groq.RateLimitError):
+    elif isinstance(e, RateLimitError):
         if isinstance(error_data, dict) and 'error' in error_data and 'message' in error_data['error']:
             error_message = error_data['error']['message']
             error_message = re.sub(r'org_[a-zA-Z0-9]+', 'org_(censored)', error_message) 
@@ -416,9 +415,9 @@ async def transcript(interaction: discord.Interaction,
                             prompt=prompt,
                         )
                     full_transcript += transcription_response.text
-                except groq.AuthenticationError as e:
+                except AuthenticationError as e:
                     handle_groq_error(e, asr_model)
-                except groq.RateLimitError as e:
+                except RateLimitError as e:
                     handle_groq_error(e, asr_model)
                     await interaction.followup.send(f"API limit reached during chunk processing. Returning processed chunks only.", ephemeral=True)
                     await interaction.followup.send(f"Partial Transcript:\n```\n{full_transcript}\n```")
@@ -437,9 +436,9 @@ async def transcript(interaction: discord.Interaction,
                         prompt=prompt,
                     )
                 await interaction.followup.send(f"Transcript:\n```\n{transcription_response}\n```")
-            except groq.AuthenticationError as e:
+            except AuthenticationError as e:
                 handle_groq_error(e, asr_model)
-            except groq.RateLimitError as e:
+            except RateLimitError as e:
                 handle_groq_error(e, asr_model)
             except Exception as e:
                 await interaction.followup.send(f"An error occurred: {e}")
