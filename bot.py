@@ -35,8 +35,6 @@ DISCORD_TOKEN = os.getenv('DISCORD_TOKEN')
 GROQ_API_KEY = os.getenv('GROQ_API_KEY')
 MVSEP_API_KEY = os.getenv('MVSEP_API_KEY')
 GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY') 
-WHISPER_CPP_PATH = os.getenv('WHISPER_CPP_PATH')  # Path to the whisper.cpp executable
-WHISPER_MODEL = os.getenv('WHISPER_CPP_MODEL')   # Specify the Whisper model you want to use
 GENIUS_API_TOKEN = os.getenv('GENIUS_API_TOKEN')
 # Initialize Groq client
 client = Groq(api_key=GROQ_API_KEY)
@@ -54,7 +52,7 @@ bot = commands.Bot(command_prefix='!', intents=intents)
 
 # Bot-wide settings
 bot_settings = {
-    "model": "gemma2:2b",
+    "model": "llama-3.1-70b-versatile",
     "system_prompt": "You are a helpful and friendly AI assistant.",
     "context_messages": 5,
     "llm_enabled": True  # LLM is enabled by default for the entire bot
