@@ -1075,6 +1075,10 @@ async def create_code(interaction: discord.Interaction, code_request: str):
         else:
             await interaction.channel.send(f"result:{result}")
             logging.info(f"User: {interaction.user} - Code Output: {result}")
+    except AuthenticationError as e:
+        handle_groq_error(e, model)
+    except RateLimitError as e:
+        handle_groq_error(e, model)
     except Exception as e:
         await interaction.response.send_message(f"An error occurred: {e}")
         logging.error(f"An error occurred: {e}")
@@ -1154,7 +1158,10 @@ async def summarize(interaction: discord.Interaction, text: str):
             logging.info(f"User: {message} - Model: {selected_model} - Summary: {summary}")
 
             await interaction.response.send_message(f"Summary:\n```\n{summary}\n```")
-
+    except AuthenticationError as e:
+        handle_groq_error(e, model)
+    except RateLimitError as e:
+        handle_groq_error(e, model)
     except Exception as e:
         await interaction.response.send_message(f"An error occurred: {e}")
         logging.error(f"An error occurred: {e}")
@@ -1222,7 +1229,10 @@ async def summarize_website(interaction: discord.Interaction, website_url: str):
             logging.info(f"User: {interaction.user} - Website: {website_url} - Model: {selected_model} extracted text: {extracted_text} - Summary: {summary}")
             lobotomised_summary = summary[:1900]
             await interaction.followup.send(f"Summary of <{website_url}>:\n```\n{lobotomised_summary}\n```")
-
+    except AuthenticationError as e:
+        handle_groq_error(e, model)
+    except RateLimitError as e:
+        handle_groq_error(e, model)
     except requests.exceptions.RequestException as e:
         await interaction.response.send_message(f"An error occurred while fetching the website: {e}")
     except Exception as e:
@@ -1641,7 +1651,10 @@ async def on_message(message: Message):
             messages.append({"role": "user", "content": message.content})
             messages.append({"role": "assistant", "content": generated_text.strip()})
             conversation_data[channel_id]["messages"] = messages[-10:]
-
+        except AuthenticationError as e:
+            handle_groq_error(e, model)
+        except RateLimitError as e:
+            handle_groq_error(e, model)
         except Exception as e:
             await message.channel.send(f"An error occurred: {e}")
             print(e).channel.send(f"An error occurred: {e}")
@@ -1674,6 +1687,10 @@ async def generate_summary(channel: discord.TextChannel):
         lobotomised_summary = summary[:1850]
         await logging_channel.send(f"**General Chat Summary (from #{channel.name}):**\n```\n{lobotomised_summary}\n```")
 #        await logging_channel.send(f"**Chat output (testin) (from #{channel.name}):**\n```\n{text_to_summarize}\n```")
+    except AuthenticationError as e:
+        handle_groq_error(e, model)
+    except RateLimitError as e:
+        handle_groq_error(e, model)
     except Exception as e:
         logging_channel = bot.get_channel(LOG_CHANNEL_ID)
         await logging_channel.send(f"An error occurred while generating the summary: {e}")
@@ -1699,6 +1716,10 @@ async def translate_message(interaction: discord.Interaction, message: discord.M
         translation = chat_completion.choices[0].message.content
         await interaction.followup.send(f"Translation (from {message.author}):\n```\n{translation}\n```", ephemeral=True)
         logging.info(f"User: {interaction.user} - Translated message from {message.author}: {message.content} - Translation: {translation}")
+    except AuthenticationError as e:
+        handle_groq_error(e, model)
+    except RateLimitError as e:
+        handle_groq_error(e, model)
     except Exception as e:
         await interaction.followup.send(f"An error occurred: {e}")
         logging.error(f"An error occurred during translation: {e}")
@@ -1722,6 +1743,10 @@ async def summarize_message(interaction: discord.Interaction, message: discord.M
         summarization = chat_completion.choices[0].message.content
         await interaction.followup.send(f"Summarized (from {message.author}):\n```\n{summarization}\n```", ephemeral=True)
         logging.info(f"User: {interaction.user} - Summarized message from {message.author}: {message.content} - Summarization: {summarization}")
+    except AuthenticationError as e:
+        handle_groq_error(e, model)
+    except RateLimitError as e:
+        handle_groq_error(e, model)
     except Exception as e:
         await interaction.followup.send(f"An error occurred: {e}")
         logging.error(f"An error occurred during summarization: {e}")
