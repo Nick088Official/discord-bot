@@ -867,9 +867,20 @@ async def serverinfo(interaction: discord.Interaction):
 
 
 @bot.tree.command(name="set_model", description="Set the language model for the entire bot.")
+@app_commands.describe(
+    model_name="The name of the LLM to use. Available models are listed in the parameter choices."
+)
+@app_commands.choices(
+    model_name=[
+        discord.app_commands.Choice(name=model, value=model)
+        for model in groq_models + gemini_models  # Combine all model lists, local_models listed out as not used for now
+    ]
+)
 async def set_model(interaction: discord.Interaction, model_name: str):
-    # ... (authorization check)
-
+    if not is_authorized(interaction, PermissionLevel.ADMINISTRATOR): # Require administrator permission
+        await interaction.response.send_message("You are not authorized to use this command.", ephemeral=True)
+        return
+        
     model_name = model_name.lower()
     if model_name in groq_models:
         bot_settings["model"] = model_name
@@ -937,11 +948,12 @@ async def help_command(interaction: discord.Interaction):
     embed = discord.Embed(title="Available Commands", color=discord.Color.blue())
 
     embed.add_field(name="/serverinfo", value="Gives info about the server.", inline=False)
+    embed.add_field(name="/llm_current_settings", value="Show the current LLM settings.", inline=False)
+    embed.add_field(name="/restart_llm", value="Restart the LLM conversation (for you or globally).", inline=False)
     embed.add_field(name="/set_model <model_name>", value="Set the language model for the entire bot. (ADMIN)", inline=False)
     embed.add_field(name="/set_system_prompt <prompt>", value="Set the system prompt for the entire bot. (ADMIN)", inline=False)
     embed.add_field(name="/set_context_messages <num_messages>", value="Set the number of context messages to use (1-10) for the entire bot. (ADMIN)", inline=False)
     embed.add_field(name="/say <message>", value="Make the bot say something. (ADMIN)", inline=False)
-    embed.add_field(name="/restart_llm", value="Restart the LLM conversation (for you or globally).", inline=False)
     embed.add_field(name="/toggle_llm", value="Turn per-user conversation history ON or OFF (ADMIN)", inline=False)
     embed.add_field(name="/toggle_per_user", value="Turn the LLM part of the bot on or off for the entire bot. (ADMIN)", inline=False)
     embed.add_field(name="/trending_projects <query>", value="Show trending GitHub projects (past 7 days). Default query: 'topic:language-model'.", inline=False)
@@ -1395,20 +1407,6 @@ async def loop(interaction: discord.Interaction):
     await interaction.response.send_message(f"Loop mode is now {'enabled' if loop_enabled else 'disabled'}.")
 
 
-
-
-@bot.tree.command(name="set_context_messages", description="Set the number of context messages to use (1-10) for the entire bot.")
-async def set_context_messages(interaction: discord.Interaction, num_messages: int):
-    if not is_authorized(interaction, PermissionLevel.ADMINISTRATOR): # Require administrator permission
-        await interaction.response.send_message("You are not authorized to use this command.", ephemeral=True)
-        return
-
-    if 1 <= num_messages <= 100000:
-        bot_settings["context_messages"] = num_messages
-        await interaction.response.send_message(f"Number of context messages set to: {num_messages} for the entire bot.")
-    else:
-        await interaction.response.send_message("Invalid number of messages. Please choose between 1 and 10.")
-
 @bot.tree.command(name="say", description="Make the bot say something.")
 async def say(interaction: discord.Interaction, message: str):
     if not is_authorized(interaction, PermissionLevel.ADMINISTRATOR): # Require administrator permission
@@ -1421,6 +1419,22 @@ async def say(interaction: discord.Interaction, message: str):
 
     # Send the message as the bot
     await interaction.channel.send(message)
+
+
+@bot.tree.command(name="llm_current_settings", description="Show the current LLM settings.")
+async def llm_current_settings(interaction: discord.Interaction):
+    """
+    Show the current LLM settings in an embed.
+    """
+    embed = discord.Embed(title="Current LLM Settings", color=discord.Color.blue())
+
+    embed.add_field(name="Model", value=bot_settings["model"], inline=False)
+    embed.add_field(name="System Prompt", value=f"```\n{bot_settings['system_prompt']}\n```", inline=False)
+    embed.add_field(name="Context Messages", value=bot_settings["context_messages"], inline=False)
+    embed.add_field(name="LLM Enabled", value="Yes" if bot_settings["llm_enabled"] else "No", inline=False)
+    embed.add_field(name="Per-User Conversations", value="Yes" if bot_settings["per_user"] else "No", inline=False)
+
+    await interaction.response.send_message(embed=embed)
 
 
 @bot.tree.command(name="restart_llm", description="Restart the LLM conversation (for you or globally).")
@@ -1466,6 +1480,19 @@ async def restart_llm(interaction: discord.Interaction, scope: str = "me"):
             if hasattr(bot, chat_key):
                 delattr(bot, chat_key) 
                 await interaction.response.send_message("Your Gemini conversation has been restarted.")
+
+
+@bot.tree.command(name="set_context_messages", description="Set the number of context messages to use (1-10) for the entire bot.")
+async def set_context_messages(interaction: discord.Interaction, num_messages: int):
+    if not is_authorized(interaction, PermissionLevel.ADMINISTRATOR): # Require administrator permission
+        await interaction.response.send_message("You are not authorized to use this command.", ephemeral=True)
+        return
+
+    if 1 <= num_messages <= 100000:
+        bot_settings["context_messages"] = num_messages
+        await interaction.response.send_message(f"Number of context messages set to: {num_messages} for the entire bot.")
+    else:
+        await interaction.response.send_message("Invalid number of messages. Please choose between 1 and 10.")
 
 
 @bot.tree.command(name="toggle_llm", description="Turn the LLM part of the bot on or off for the entire bot (ADMIN).")
