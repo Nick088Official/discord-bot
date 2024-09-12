@@ -1680,20 +1680,31 @@ async def on_message(message: Message):
 
             elif selected_model in gemini_models:  # Gemini Models
                 try:
-                    # Create a Gemini model instance 
-                    gemini_model = gemini.GenerativeModel(selected_model) 
+                    # --- Gemini Model Handling ---
+                    if not hasattr(bot, "gemini_chat"):  # Check if chat instance exists
+                        bot.gemini_chat = gemini.GenerativeModel(
+                            model_name=selected_model,
+                            generation_config=generation_config,
+                            system_instruction=system_prompt  # Set system prompt here
+                        ).start_chat()  # Start chat instance
 
-                    # Use the model instance to generate content
-                    response = gemini_model.generate_content( 
-                        f"{message.content}"  # Use message.content here 
-                    )
+                    # Format context messages for Gemini
+                    gemini_history = [
+                        {"role": "user" if msg["role"] == "user" else "model", 
+                         "parts": msg["content"]} 
+                        for msg in context_messages
+                    ]
+                    for item in gemini_history:
+                        bot.gemini_chat._history.append(item)
 
-                    # Extract the response text
+                    response = bot.gemini_chat.send_message(message.content)
                     generated_text = response.text
-                    await message.reply(generated_text) 
+                    await message.reply(generated_text)
 
-                except Exception as e: 
+                except Exception as e:
                     await message.channel.send(f"An error occurred with Gemini: {e}")
+                    print(f"Gemini Error: {e}")
+                    traceback.print_exc()  # Print full traceback for debugging
 
             # Logging and debugging (now outside the model-specific blocks)
             logging.info(f"User: {message.author} - Message: {message.content} - Generated Text: {generated_text}")
