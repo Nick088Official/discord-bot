@@ -1632,12 +1632,16 @@ async def on_message(message: Message):
             channel_id = str(message.channel.id)
             user_id = str(message.author.id)  # Get the user ID
 
-            # Get conversation history based on per_user setting
+            # --- CORRECTED: Ensure a Unique List for Each User ---
             if bot_settings["per_user"]:
-                messages = conversation_data[channel_id][user_id]["messages"] 
-            else:
-                messages = conversation_data[channel_id]["messages"]  # Global chat history
-            messages = conversation_data[channel_id]["messages"]
+                if user_id not in conversation_data[channel_id]:
+                    conversation_data[channel_id][user_id] = {"messages": []}  
+                messages = conversation_data[channel_id][user_id]["messages"]
+            else: 
+                if "messages" not in conversation_data[channel_id]:
+                    conversation_data[channel_id]["messages"] = []
+                messages = conversation_data[channel_id]["messages"]
+                
             selected_model = bot_settings["model"]
             system_prompt = bot_settings["system_prompt"]
             context_messages_num = bot_settings["context_messages"]
