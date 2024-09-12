@@ -1688,12 +1688,15 @@ async def on_message(message: Message):
                             system_instruction=system_prompt  # Set system prompt here
                         ).start_chat()  # Start chat instance
 
-                    # Format context messages for Gemini
+                    # --- Limit context messages for Gemini ---
                     gemini_history = [
                         {"role": "user" if msg["role"] == "user" else "model", 
                          "parts": msg["content"]} 
-                        for msg in context_messages
+                        for msg in messages[-context_messages_num:]  # Get only the last 'n' messages
                     ]
+
+                    # --- Clear existing history and set new history ---
+                    bot.gemini_chat._history.clear()  # Clear the previous history
                     for item in gemini_history:
                         bot.gemini_chat._history.append(item)
 
