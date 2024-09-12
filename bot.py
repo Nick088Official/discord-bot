@@ -1746,8 +1746,6 @@ async def on_message(message: Message):
 
                 except Exception as e:
                     await message.channel.send(f"An error occurred with Gemini: {e}")
-                    print(f"Gemini Error: {e}")
-                    traceback.print_exc()  # Print full traceback for debugging
 
             # Logging and debugging 
             logging.info(f"User: {message.author} - Message: {message.content} - Generated Text: {generated_text}")
@@ -1763,7 +1761,7 @@ async def on_message(message: Message):
 
         except Exception as e:  # General exception handling 
             await message.channel.send(f"An error occurred: {e}")
-            print(e)
+            print(f"Full error traceback:\n{traceback.format_exc()}")
             
 async def generate_summary(channel: discord.TextChannel):
     """Generates a summary of the last 20 messages in the channel and sends it to the logging channel."""
