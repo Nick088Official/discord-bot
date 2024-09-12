@@ -80,7 +80,8 @@ bot_settings = {
     "model": "llama-3.1-70b-versatile",
     "system_prompt": "You are a helpful and friendly AI assistant.",
     "context_messages": 5,
-    "llm_enabled": True  # LLM is enabled by default for the entire bot
+    "llm_enabled": True,  # LLM is enabled by default for the entire bot
+    "per_user": False  # Per-user conversation history is disabled by default 
 }
 code_language = "python"
 # summary
@@ -137,8 +138,10 @@ local_models = [  # Renamed from gemini_models
     # Add your local model names here
     "gemma2:2b",
 ]
-    # --- Conversation Data (Important!) chatting shit
-conversation_data = defaultdict(lambda: {"messages": []}) 
+
+# --- Conversation Data ---
+# Use a nested dictionary to store conversation data per channel, per user
+conversation_data = defaultdict(lambda: defaultdict(lambda: {"messages": []}))
 
 # --- loggin shit
 
@@ -937,12 +940,15 @@ async def help_command(interaction: discord.Interaction):
     embed.add_field(name="/set_system_prompt <prompt>", value="Set the system prompt for the entire bot. (ADMIN)", inline=False)
     embed.add_field(name="/set_context_messages <num_messages>", value="Set the number of context messages to use (1-10) for the entire bot. (ADMIN)", inline=False)
     embed.add_field(name="/say <message>", value="Make the bot say something. (ADMIN)", inline=False)
-    embed.add_field(name="/toggle_llm", value="Turn the LLM part of the bot on or off for the entire bot. (ADMIN)", inline=False)
+    embed.add_field(name="/toggle_llm", value="Turn per-user conversation history ON or OFF (ADMIN)", inline=False)
+    embed.add_field(name="/toggle_per_user", value="Turn the LLM part of the bot on or off for the entire bot. (ADMIN)", inline=False)
     embed.add_field(name="/trending_projects <query>", value="Show trending GitHub projects (past 7 days). Default query: 'topic:language-model'.", inline=False)
     embed.add_field(name="/search_github_projects <query>", value="Search for GitHub projects.", inline=False)
     embed.add_field(name="/summarize <prompt>", value="Summarize info given.", inline=False)
     embed.add_field(name="/play_audio", value="plays an audio based on what the file path in code says (ADMIN)", inline=False)
     await interaction.response.send_message(embed=embed)
+
+
 
 @bot.tree.command(name="trending_projects", description="Show trending GitHub projects.")
 async def trending_projects(interaction: discord.Interaction, query: str = "topic:language-model"):
@@ -1415,7 +1421,7 @@ async def say(interaction: discord.Interaction, message: str):
     await interaction.channel.send(message)
 
 
-@bot.tree.command(name="toggle_llm", description="Turn the LLM part of the bot on or off for the entire bot.")
+@bot.tree.command(name="toggle_llm", description="Turn the LLM part of the bot on or off for the entire bot (ADMIN).")
 async def toggle_llm(interaction: discord.Interaction):
     if not is_authorized(interaction, PermissionLevel.MODERATOR): # Require administrator permission
         await interaction.response.send_message("You are not authorized to use this command.", ephemeral=True)
@@ -1448,6 +1454,17 @@ async def show_log(interaction: discord.Interaction):
     except Exception as e:
         await interaction.response.send_message(f"An error occurred while reading the log file: {e}")
         logging.error(f"An error occurred while reading the log file: {e}") 
+
+
+@bot.tree.command(name="toggle_per_user", description="Turn per-user conversation history ON or OFF (MODERATOR).")
+async def toggle_per_user(interaction: discord.Interaction):
+    if not is_authorized(interaction, PermissionLevel.MODERATOR):
+        await interaction.response.send_message("You are not authorized to use this command.", ephemeral=True)
+        return
+
+    bot_settings["per_user"] = not bot_settings["per_user"]
+    new_state = "ON" if bot_settings["per_user"] else "OFF"
+    await interaction.response.send_message(f"Per-user conversation history is now turned {new_state}.")
 
 
 # --- Message Handling --- 
@@ -1613,6 +1630,13 @@ async def on_message(message: Message):
     if bot_settings["llm_enabled"] and (is_mentioned or is_reply_to_bot):
         try:
             channel_id = str(message.channel.id)
+            user_id = str(message.author.id)  # Get the user ID
+
+            # Get conversation history based on per_user setting
+            if bot_settings["per_user"]:
+                messages = conversation_data[channel_id][user_id]["messages"] 
+            else:
+                messages = conversation_data[channel_id]["messages"]  # Global chat history
             messages = conversation_data[channel_id]["messages"]
             selected_model = bot_settings["model"]
             system_prompt = bot_settings["system_prompt"]
@@ -1680,27 +1704,31 @@ async def on_message(message: Message):
 
             elif selected_model in gemini_models:  # Gemini Models
                 try:
-                    # --- Gemini Model Handling ---
-                    if not hasattr(bot, "gemini_chat"):  # Check if chat instance exists
-                        bot.gemini_chat = gemini.GenerativeModel(
+                    # --- Gemini Model Handling (Per-User or Global) --- 
+                    chat_key = f"gemini_chat_{user_id}" if bot_settings["per_user"] else "gemini_chat"
+
+                    if not hasattr(bot, chat_key):  # Check for chat instance
+                        bot.__setattr__(chat_key, gemini.GenerativeModel(
                             model_name=selected_model,
                             generation_config=generation_config,
-                            system_instruction=system_prompt  # Set system prompt here
-                        ).start_chat()  # Start chat instance
+                            system_instruction=system_prompt
+                        ).start_chat())
+
+                    gemini_chat = getattr(bot, chat_key)  # Get the correct chat instance
 
                     # --- Limit context messages for Gemini ---
                     gemini_history = [
-                        {"role": "user" if msg["role"] == "user" else "model", 
-                         "parts": msg["content"]} 
-                        for msg in messages[-context_messages_num:]  # Get only the last 'n' messages
+                        {"role": "user" if msg["role"] == "user" else "model",
+                         "parts": msg["content"]}
+                        for msg in context_messages
                     ]
 
                     # --- Clear existing history and set new history ---
-                    bot.gemini_chat._history.clear()  # Clear the previous history
+                    gemini_chat._history.clear()
                     for item in gemini_history:
-                        bot.gemini_chat._history.append(item)
+                        gemini_chat._history.append(item)
 
-                    response = bot.gemini_chat.send_message(message.content)
+                    response = gemini_chat.send_message(message.content)
                     generated_text = response.text
                     await message.reply(generated_text)
 
@@ -1709,14 +1737,17 @@ async def on_message(message: Message):
                     print(f"Gemini Error: {e}")
                     traceback.print_exc()  # Print full traceback for debugging
 
-            # Logging and debugging (now outside the model-specific blocks)
+            # Logging and debugging 
             logging.info(f"User: {message.author} - Message: {message.content} - Generated Text: {generated_text}")
-            print(f"user:{message.author}\n message:{message.content}\n output:{generated_text}")
 
-            # Update conversation history
+            # Update conversation history (per-user or global)
             messages.append({"role": "user", "content": message.content})
             messages.append({"role": "assistant", "content": generated_text.strip()})
-            conversation_data[channel_id]["messages"] = messages[-10:]
+
+            if bot_settings["per_user"]:
+                conversation_data[channel_id][user_id]["messages"] = messages[-context_messages_num:]
+            else:
+                conversation_data[channel_id]["messages"] = messages[-context_messages_num:] 
 
         except Exception as e:  # General exception handling 
             await message.channel.send(f"An error occurred: {e}")
