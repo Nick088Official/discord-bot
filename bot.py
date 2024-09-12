@@ -1688,7 +1688,13 @@ async def on_message(message: Message):
                             }
                         ]
                     else:  # Use Groq API for other models
-                        api_messages = [{"role": "system", "content": system_prompt}] + context_messages + [{"role": "user", "content": message.content}]
+                        api_messages = [{"role": "system", "content": system_prompt}]
+
+                        # Add context messages individually
+                        for msg in context_messages:
+                            api_messages.append(msg) 
+
+                        api_messages.append({"role": "user", "content": message.content})
 
                     chat_completion = client.chat.completions.create(
                         messages=api_messages,
@@ -1717,11 +1723,13 @@ async def on_message(message: Message):
                     gemini_chat = getattr(bot, chat_key)  # Get the correct chat instance
 
                     # --- Limit context messages for Gemini ---
-                    gemini_history = [
-                        {"role": "user" if msg["role"] == "user" else "model",
-                         "parts": msg["content"]}
-                        for msg in context_messages
-                    ]
+                    # Add context messages individually
+                    gemini_history = [] 
+                    for msg in context_messages:
+                        gemini_history.append({
+                            "role": "user" if msg["role"] == "user" else "model",
+                            "parts": msg["content"]
+                        })
 
                     # --- Clear existing history and set new history ---
                     gemini_chat._history.clear()
