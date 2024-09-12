@@ -931,6 +931,7 @@ async def search_github_projects(interaction: discord.Interaction, query: str):
     except requests.exceptions.RequestException as e:
         await interaction.response.send_message(f"An error occurred while searching GitHub: {e}")
 
+
 @bot.tree.command(name="help", description="Show available commands.")
 async def help_command(interaction: discord.Interaction):
     embed = discord.Embed(title="Available Commands", color=discord.Color.blue())
@@ -940,6 +941,7 @@ async def help_command(interaction: discord.Interaction):
     embed.add_field(name="/set_system_prompt <prompt>", value="Set the system prompt for the entire bot. (ADMIN)", inline=False)
     embed.add_field(name="/set_context_messages <num_messages>", value="Set the number of context messages to use (1-10) for the entire bot. (ADMIN)", inline=False)
     embed.add_field(name="/say <message>", value="Make the bot say something. (ADMIN)", inline=False)
+    embed.add_field(name="/restart_llm", value="Restart the LLM conversation (for you or globally).", inline=False)
     embed.add_field(name="/toggle_llm", value="Turn per-user conversation history ON or OFF (ADMIN)", inline=False)
     embed.add_field(name="/toggle_per_user", value="Turn the LLM part of the bot on or off for the entire bot. (ADMIN)", inline=False)
     embed.add_field(name="/trending_projects <query>", value="Show trending GitHub projects (past 7 days). Default query: 'topic:language-model'.", inline=False)
@@ -1419,6 +1421,51 @@ async def say(interaction: discord.Interaction, message: str):
 
     # Send the message as the bot
     await interaction.channel.send(message)
+
+
+@bot.tree.command(name="restart_llm", description="Restart the LLM conversation (for you or globally).")
+@app_commands.describe(scope="Restart globally (Admin only) or just for you.")
+@app_commands.choices(
+    scope=[
+        discord.app_commands.Choice(name="Globally", value="global"),
+        discord.app_commands.Choice(name="For me", value="me"),
+    ]
+)
+async def restart_llm(interaction: discord.Interaction, scope: str = "me"):
+    channel_id = str(interaction.channel.id)
+    user_id = str(interaction.user.id)
+
+    if scope == "global":
+        if not is_authorized(interaction, PermissionLevel.ADMINISTRATOR):
+            await interaction.response.send_message("You need administrator permissions to restart the LLM globally.", ephemeral=True)
+            return
+
+        # Restart globally (clear all conversations in the current channel)
+        conversation_data[channel_id] = defaultdict(lambda: {"messages": []}) 
+        await interaction.response.send_message("LLM conversation restarted globally for this channel.")
+
+    elif scope == "me":
+        # Restart for the current user in the current channel
+        if bot_settings["per_user"]:
+            if user_id in conversation_data[channel_id]:
+                conversation_data[channel_id][user_id]["messages"] = []
+                await interaction.response.send_message("LLM conversation restarted for you in this channel.")
+            else:
+                await interaction.response.send_message("You don't have an active conversation to restart.")
+        else:
+            await interaction.response.send_message("Per-user conversations are not enabled.", ephemeral=True)
+
+    # --- Restart Gemini Chat Instances (if applicable) ---
+    if bot_settings["model"] in gemini_models:
+        if scope == "global":
+            if hasattr(bot, "gemini_chat"):
+                del bot.gemini_chat 
+                await interaction.channel.send("Gemini chat instance reset globally for this channel.") 
+        elif scope == "me":
+            chat_key = f"gemini_chat_{user_id}"
+            if hasattr(bot, chat_key):
+                delattr(bot, chat_key) 
+                await interaction.response.send_message("Your Gemini conversation has been restarted.")
 
 
 @bot.tree.command(name="toggle_llm", description="Turn the LLM part of the bot on or off for the entire bot (ADMIN).")
