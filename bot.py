@@ -2001,30 +2001,31 @@ async def on_ready():
         print(f"  - {guild.name} (ID: {guild.id})")
         logging.info(f"  - {guild.name} (ID: {guild.id})")
 
-POOP_REACTION_THRESHOLD = 1
+POOP_REACTION_THRESHOLD = 3
 WALL_OF_SHAME_CHANNEL_ID = 1263185777794220214
-#@bot.event
-#async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
-#    if str(payload.emoji) == "💩":
-#        channel = bot.get_channel(payload.channel_id)
-#        message = await channel.fetch_message(payload.message_id)
-#
-#        reaction_count = 0
-#        for reaction in message.reactions:
-#            if str(reaction.emoji) == "💩":
-#                reaction_count = reaction.count
-#
-#        if reaction_count >= POOP_REACTION_THRESHOLD:
-#            shame_channel = bot.get_channel(WALL_OF_SHAME_CHANNEL_ID)
-#            embed = discord.Embed(
-#                description=message.content,
-#                color=discord.Color.gold(),
-#                timestamp=message.created_at
-#            )
- #           embed.set_author(name=message.author.display_name, icon_url=message.author.avatar.url)
- #           embed.add_field(name="Jump to message", value=f"[Click Here]({message.jump_url})")
 
-#            await shame_channel.send(embed=embed)
+@bot.event
+async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
+    if str(payload.emoji) == "💩":
+        channel = bot.get_channel(payload.channel_id)
+        message = await channel.fetch_message(payload.message_id)
+
+        reaction_count = 0
+        for reaction in message.reactions:
+            if str(reaction.emoji) == "💩":
+                reaction_count = reaction.count
+
+        if reaction_count >= POOP_REACTION_THRESHOLD:
+            shame_channel = bot.get_channel(WALL_OF_SHAME_CHANNEL_ID)
+            embed = discord.Embed(
+                description=message.content,
+                color=discord.Color.gold(),
+                timestamp=message.created_at
+            )
+            embed.set_author(name=message.author.display_name, icon_url=message.author.avatar.url)
+            embed.add_field(name="Jump to message", value=f"[Click Here]({message.jump_url})")
+
+            await shame_channel.send(embed=embed)
 
 # Run the bot
 bot.run(DISCORD_TOKEN)
