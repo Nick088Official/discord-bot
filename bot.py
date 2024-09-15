@@ -2002,7 +2002,7 @@ async def on_ready():
         logging.info(f"  - {guild.name} (ID: {guild.id})")
 
 POOP_REACTION_THRESHOLD = 3
-WALL_OF_SHAME_CHANNEL_ID = 1263185777794220214
+WALL_OF_SHAME_CHANNEL_ID = 1230931511423926455
 
 @bot.event
 async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
