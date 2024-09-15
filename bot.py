@@ -1243,7 +1243,7 @@ async def summarize_website(interaction: discord.Interaction, website_url: str):
                      model_name=selected_model,
                      generation_config=generation_config,
                      system_instruction=system_prompt
-                 )
+                 ))
 
             # Use the model instance to generate content
             response = gemini_model.generate_content( 
