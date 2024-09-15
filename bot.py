@@ -1238,12 +1238,12 @@ async def summarize_website(interaction: discord.Interaction, website_url: str):
         if extracted_text == None:
          if selected_model in gemini_models:
             # Create a Gemini model instance
-             if not hasattr(bot, chat_key):  # Check for chat instance
-                 bot.__setattr__(chat_key, gemini.GenerativeModel(
-                     model_name=selected_model,
-                     generation_config=generation_config,
-                     system_instruction=system_prompt
-                 ))
+            if not hasattr(bot, chat_key):  # Check for chat instance
+                bot.__setattr__(chat_key, gemini.GenerativeModel(
+                    model_name=selected_model,
+                    generation_config=generation_config,
+                    system_instruction=system_prompt
+                ))
 
             # Use the model instance to generate content
             response = gemini_model.generate_content( 
