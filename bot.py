@@ -69,11 +69,31 @@ gemini.configure(api_key=GOOGLE_API_KEY)
 # Initialize genius shit
 genius = lyricsgenius.Genius("GENIUS_API_TOKEN")
 
+# discord things
+
 # Initialize the bot with intents
 intents = discord.Intents.default()
 intents.messages = True 
 intents.message_content = True
 bot = commands.Bot(command_prefix='!', intents=intents)
+
+MAX_MESSAGE_LENGTH = 2000  # Discord's message length limit
+
+def split_message(text):
+    """Splits a long message into chunks that fit within Discord's character limit."""
+    if len(text) <= MAX_MESSAGE_LENGTH:
+        return [text]
+
+    chunks = []
+    current_chunk = ""
+    words = text.split()
+    for word in words:
+        if len(current_chunk) + len(word) + 1 > MAX_MESSAGE_LENGTH:
+            chunks.append(current_chunk)
+            current_chunk = ""
+        current_chunk += word + " "
+    chunks.append(current_chunk)  # Add the last chunk
+    return chunks
 
 # Bot-wide settings
 bot_settings = {
@@ -1197,9 +1217,6 @@ async def ping(interaction: discord.Interaction):
 
 @bot.tree.command(name="summarize_website", description="summarize a website.")
 async def summarize_website(interaction: discord.Interaction, website_url: str):
-#    if not is_authorized(interaction):
-#        await interaction.response.send_message("You are not authorized to use this command.", ephemeral=True)
-#        return
     await interaction.response.defer() 
     try:
         response = requests.get(website_url)
@@ -1220,23 +1237,22 @@ async def summarize_website(interaction: discord.Interaction, website_url: str):
         selected_model = bot_settings["model"]
         if extracted_text == None:
          if selected_model in gemini_models:
-            try:
-                # Create a Gemini model instance (do this once, maybe outside the function)
-                gemini_model = gemini.GenerativeModel(selected_model) 
+            # Create a Gemini model instance
+             if not hasattr(bot, chat_key):  # Check for chat instance
+                 bot.__setattr__(chat_key, gemini.GenerativeModel(
+                     model_name=selected_model,
+                     generation_config=generation_config,
+                     system_instruction=system_prompt
+                 )
 
-                # Use the model instance to generate content
-                response = gemini_model.generate_content( 
-                    f"Summarize the following text:\n\n{extracted_text}",
-                )
+            # Use the model instance to generate content
+            response = gemini_model.generate_content( 
+                f"Summarize the following text:\n\n{extracted_text}",
+            )
 
-                # Extract the summary from the response
-                summary = response.text
-                await interaction.response.send_message(f"Summary:\n```\n{summary}\n```")
-            except Exception as e:
-                await interaction.response.send_message(f"An error occurred while processing the request: {e}")
-
+            # Extract the summary from the response
+            summary = response.text
         else:  # Use Groq API for summarization
-            lobotomised_extracted_text = extracted_text[:10000] 
             system_prompt = bot_settings["system_prompt"]
             chat_completion = client.chat.completions.create(
                 messages=[
@@ -1246,12 +1262,17 @@ async def summarize_website(interaction: discord.Interaction, website_url: str):
                 model="llama3-8b-8192"
             )
             summary = chat_completion.choices[0].message.content
-            
+        
+        # Split the summary into chunks if it's too long
+        summary_chunks = split_message(summary)
 
-            # Log the interaction, not the text string
-            logging.info(f"User: {interaction.user} - Website: {website_url} - Model: {selected_model} extracted text: {extracted_text} - Summary: {summary}")
-            lobotomised_summary = summary[:1900]
-            await interaction.followup.send(f"Summary of <{website_url}>:\n```\n{lobotomised_summary}\n```")
+        # Log the interaction and summary chunks
+        logging.info(f"User: {interaction.user} - Website: {website_url} - Model: {selected_model} extracted text: {extracted_text} - Summary Chunks: {summary_chunks}")
+
+        # Send the summary chunks as separate messages
+        await interaction.followup.send(f"Summary of <{website_url}>:")
+        for chunk in summary_chunks:
+            await interaction.channel.send(f"```\n{chunk}\n```")
     except AuthenticationError as e:
         handle_groq_error(e, model)
     except RateLimitError as e:
@@ -1706,7 +1727,7 @@ async def on_message(message: Message):
             channel_id = str(message.channel.id)
             user_id = str(message.author.id)  # Get the user ID
 
-            # --- CORRECTED: Ensure a Unique List for Each User ---
+            # Ensure a Unique List for Each User ---
             if bot_settings["per_user"]:
                 if user_id not in conversation_data[channel_id]:
                     conversation_data[channel_id][user_id] = {"messages": []}  
@@ -1779,8 +1800,10 @@ async def on_message(message: Message):
                         model=selected_model
                     )
                     generated_text = chat_completion.choices[0].message.content
-                    await message.reply(f"{'Only one image can be processed per request, processing only your first image:' if len(message.attachments) > 1 and selected_model == 'llava-v1.5-7b-4096-preview' else ''}\n{generated_text.strip()}")
-
+                    
+                    if len(message.attachments) > 1 and selected_model == "llava-v1.5-7b-4096-preview":
+                        generated_text = "Only one image can be processed per request, processing only your first image:\n" + generated_text
+                        
                 except AuthenticationError as e:
                     handle_groq_error(e, selected_model)
                 except RateLimitError as e:
@@ -1816,10 +1839,20 @@ async def on_message(message: Message):
 
                     response = gemini_chat.send_message(message.content)
                     generated_text = response.text
-                    await message.reply(generated_text)
 
                 except Exception as e:
                     await message.channel.send(f"An error occurred with Gemini: {e}")
+
+            # Split the generated text into chunks if it's too long
+            generated_text_chunks = split_message(generated_text.strip())
+
+            # Send the first chunk as a reply to the user
+            if generated_text_chunks:
+                await message.reply(generated_text_chunks[0])
+
+            # Send the remaining chunks as separate messages
+            for chunk in generated_text_chunks[1:]:
+                await message.channel.send(chunk)
 
             # Logging and debugging 
             logging.info(f"User: {message.author} - Message: {message.content} - Generated Text: {generated_text}")
@@ -1861,10 +1894,15 @@ async def generate_summary(channel: discord.TextChannel):
             model="llama-3.1-70b-versatile"  # Or your preferred Groq model
         )
         summary = chat_completion.choices[0].message.content
+        # Split the summary into chunks if it's too long
+        summary_chunks = split_message(summary)
+
         logging_channel = bot.get_channel(LOG_CHANNEL_ID)
-        lobotomised_summary = summary[:1850]
-        await logging_channel.send(f"**General Chat Summary (from #{channel.name}):**\n```\n{lobotomised_summary}\n```")
-#        await logging_channel.send(f"**Chat output (testin) (from #{channel.name}):**\n```\n{text_to_summarize}\n```")
+
+        # Send the summary chunks as separate messages
+        await logging_channel.send(f"**General Chat Summary (from #{channel.name}):**")
+        for chunk in summary_chunks:
+            await logging_channel.send(f"```\n{chunk}\n```")
     except AuthenticationError as e:
         handle_groq_error(e, model)
     except RateLimitError as e:
