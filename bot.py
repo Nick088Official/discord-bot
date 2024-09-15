@@ -150,8 +150,10 @@ groq_models = [
 # Define valid model names for Gemini
 gemini_models = [
     "gemini-1.5-flash",
+    "gemini-1.5-flash-latest",
     "gemini-1.5-pro",
-    "gemini-1.5-pro-exp-0801"
+    "gemini-1.5-pro-latest",
+    "gemini-1.0-pro"
 ]
 
 local_models = [  # Renamed from gemini_models
