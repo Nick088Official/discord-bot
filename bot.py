@@ -144,6 +144,10 @@ groq_models = [
     "gemma-7b-it",
     "gemma2-9b-it",
     "llava-v1.5-7b-4096-preview",
+    "llama-3.2-1b-preview",
+    "llama-3.2-3b-preview",
+    "llama-3.2-11b-text-preview",
+    "llama-3.2-90b-text-preview",
     "llama-guard-3-8b"
 ]
 
