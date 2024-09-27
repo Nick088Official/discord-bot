@@ -26,6 +26,7 @@ import aiohttp
 import lyricsgenius
 from timeit import default_timer as timer 
 from PIL import Image
+from io import BytesIO
 import yt_dlp
 from enum import Enum
 from langchain.llms import Ollama
@@ -98,7 +99,7 @@ def split_message(text):
 # Bot-wide settings
 bot_settings = {
     "model": "llama-3.1-70b-versatile",
-    "system_prompt": "You are a helpful and friendly AI assistant.",
+    "system_prompt": "You are a helpful and friendly AI assistant on Discord.",
     "context_messages": 5,
     "llm_enabled": True,  # LLM is enabled by default for the entire bot
     "per_user": False  # Per-user conversation history is disabled by default 
@@ -147,6 +148,7 @@ groq_models = [
     "llama-3.2-1b-preview",
     "llama-3.2-3b-preview",
     "llama-3.2-11b-text-preview",
+    "llama-3.2-11b-vision-preview",
     "llama-3.2-90b-text-preview",
     "llama-guard-3-8b"
 ]
@@ -1767,7 +1769,7 @@ async def on_message(message: Message):
 
             elif selected_model in groq_models:  # Groq Models (LLaVA and others)
                 try:
-                    if selected_model == "llava-v1.5-7b-4096-preview": # LLaVA Groq SPECIFIC LOGIC 
+                    if selected_model == "llava-v1.5-7b-4096-preview" or "llama-3.2-11b-vision-preview": # Vision Groq SPECIFIC LOGIC 
                         # Check for multi-turn conversation attempt
                         if is_reply_to_bot and messages and messages[-1]["role"] == "assistant": 
                             await message.reply("For this model, multi-turn conversations are not currently supported. Only one user message is allowed per request.")
@@ -1779,6 +1781,18 @@ async def on_message(message: Message):
                             if attachment.content_type.startswith("image/"):
                                 if attachment.size <= 20 * 1024 * 1024: # 20mb max
                                     image_url = attachment.url
+                                    # Check pixel dimensions only for model "b"
+                                    if model == "llama-3.2-11b-vision-preview": 
+                                        try:
+                                            response = requests.get(image_url, stream=True)
+                                            image = Image.open(BytesIO(response.content))
+                                            width, height = image.size
+                                            if width > 1120 or height > 1120:
+                                                await message.reply("Image dimensions too large (max 1120x1120 pixels).")
+                                                return
+                                        except Exception as e:
+                                            await message.reply(f"Error checking image dimensions: {e}")
+                                            return
                                 else:
                                     await message.reply("Image size too large (max 20MB).")
                                     return
