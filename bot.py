@@ -1769,6 +1769,9 @@ async def on_message(message: Message):
 
             elif selected_model in groq_models:  # Groq Models (LLaVA and others)
                 try:
+                    # for api messages
+                    content_list = [{"type": "text", "text": message.content}]
+                    
                     if selected_model == "llava-v1.5-7b-4096-preview" or "llama-3.2-11b-vision-preview": # Vision Groq SPECIFIC LOGIC 
                         # Check for multi-turn conversation attempt
                         if is_reply_to_bot and messages and messages[-1]["role"] == "assistant": 
@@ -1797,11 +1800,10 @@ async def on_message(message: Message):
                                     await message.reply("Image size too large (max 20MB).")
                                     return
                         # Construct the message content list conditionally
-    content_list = [{"type": "text", "text": message.content}]
-    if image_url:
-        content_list.append({"type": "image_url", "image_url": {"url": image_url}})
+                        if image_url:
+                            content_list.append({"type": "image_url", "image_url": {"url": image_url}})
     
-    api_messages = [{"role": "user", "content": content_list}]
+                        api_messages = [{"role": "user", "content": content_list}]
                     else:  # Use Groq API for other models
                         api_messages = [{"role": "system", "content": system_prompt}]
                         
