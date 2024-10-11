@@ -1796,22 +1796,18 @@ async def on_message(message: Message):
                                 else:
                                     await message.reply("Image size too large (max 20MB).")
                                     return
-                        api_messages = [  
-                            {
-                                "role": "user", 
-                                "content": [
-                                    {"type": "text", "text": message.content},
-                                    {"type": "image_url", "image_url": {"url": image_url}} if image_url else {}
-                                ]
-                            }
-                        ]
+                        # Construct the message content list conditionally
+    content_list = [{"type": "text", "text": message.content}]
+    if image_url:
+        content_list.append({"type": "image_url", "image_url": {"url": image_url}})
+    
+    api_messages = [{"role": "user", "content": content_list}]
                     else:  # Use Groq API for other models
                         api_messages = [{"role": "system", "content": system_prompt}]
-
-                        # Add context messages individually
+                        
                         for msg in context_messages:
-                            api_messages.append(msg) 
-
+                            api_messages.append(msg)
+                        
                         api_messages.append({"role": "user", "content": message.content})
 
                     chat_completion = client.chat.completions.create(
