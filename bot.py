@@ -1774,7 +1774,7 @@ async def on_message(message: Message):
                     
                     if selected_model == "llava-v1.5-7b-4096-preview" or "llama-3.2-11b-vision-preview": # Vision Groq SPECIFIC LOGIC 
                         # Check for multi-turn conversation attempt
-                        if is_reply_to_bot and messages and messages[-1]["role"] == "assistant": 
+                        if (selected_model == "llava-v1.5-7b-4096-preview" or selected_model == "llama-3.2-11b-vision-preview") and is_reply_to_bot and messages and messages[-1]["role"] == "assistant": 
                             await message.reply("For this model, multi-turn conversations are not currently supported. Only one user message is allowed per request.")
                             return
 
