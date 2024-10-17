@@ -1814,6 +1814,13 @@ async def on_message(message: Message):
                     )
                     generated_text = chat_completion.choices[0].message.content
                     
+                    
+                        # Update conversation history (per-user or global)
+                        messages.append({"role": "user", "content": message.content})
+                        messages.append({"role": "assistant", "content": generated_text.strip()})
+                        conversation_data[conversation_key]["messages"] = messages[-context_messages_num:]
+
+                    
                     if len(message.attachments) > 1 and selected_model == "llava-v1.5-7b-4096-preview":
                         generated_text = "Only one image can be processed per request, processing only your first image:\n" + generated_text
                         
