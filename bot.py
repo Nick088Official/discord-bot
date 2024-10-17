@@ -1804,13 +1804,9 @@ async def on_message(message: Message):
                             content_list.append({"type": "image_url", "image_url": {"url": image_url}})
     
                         api_messages = [{"role": "user", "content": content_list}]
-                    else:  # Use Groq API for other models
-                        api_messages = [{"role": "system", "content": system_prompt}]
-                        
-                        for msg in context_messages:
-                            api_messages.append(msg)
-                        
-                        api_messages.append({"role": "user", "content": message.content})
+                    else:  # Use Groq API for other models (Multi-turn)
+                        api_messages = [{"role": "system", "content": system_prompt}] + context_messages
+                        api_messages.append({"role": "user", "content": message.content}) #Append only new message to context
 
                     chat_completion = client.chat.completions.create(
                         messages=api_messages,
