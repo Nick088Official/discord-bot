@@ -1805,8 +1805,18 @@ async def on_message(message: Message):
     
                         api_messages = [{"role": "user", "content": content_list}]
                     else:  # Use Groq API for other models (Multi-turn)
-                        # Correctly Build api_messages with Context
+
+                        if bot_settings["per_user"]:
+                            conversation_data[channel_id][user_id]["messages"] = messages[-context_messages_num:]
+                        else:
+                            conversation_data[channel_id]["messages"] = messages[-context_messages_num:]
+                            
                         api_messages = [{"role": "system", "content": system_prompt}] + context_messages
+
+                        # Add previous context messages
+                        for msg in messages[-context_messages_num:]:
+                            api_messages.append(msg)
+
                         api_messages.append({"role": "user", "content": content_list})
                         
                     chat_completion = client.chat.completions.create(
@@ -1817,14 +1827,7 @@ async def on_message(message: Message):
                     generated_text = chat_completion.choices[0].message.content
                         
                     # Update conversation history (AFTER getting the response)
-                    api_messages.append({"role": "user", "content": content_list})
                     api_messages.append({"role": "assistant", "content": generated_text.strip()})
-
-                    if bot_settings["per_user"]:
-                        conversation_data[channel_id][user_id]["messages"] = messages[-context_messages_num:]
-                    else:
-                        conversation_data[channel_id]["messages"] = messages[-context_messages_num:]
-
                     
                     if len(message.attachments) > 1 and selected_model == "llava-v1.5-7b-4096-preview":
                         generated_text = "Only one image can be processed per request, processing only your first image:\n" + generated_text
