@@ -1811,14 +1811,15 @@ async def on_message(message: Message):
 
                         # Add context messages individually
                         for msg in context_messages:
-                            api_messages.append(msg) 
+                            api_messages.append(msg)
+                            print("appended context msg:", msg)
 
                         api_messages.append({"role": "user", "content": content_list})
 
                     print(api_messages)
                     
                     chat_completion = client.chat.completions.create(
-                        messages=context_messages,
+                        messages=api_messages,
                         model=selected_model
                     )
                         
