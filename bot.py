@@ -1809,21 +1809,21 @@ async def on_message(message: Message):
                         api_messages = [{"role": "system", "content": system_prompt}] + context_messages
                         api_messages.append({"role": "user", "content": content_list})
                         
-                        chat_completion = client.chat.completions.create(
-                            messages=api_messages,
-                            model=selected_model
-                        )
+                    chat_completion = client.chat.completions.create(
+                        messages=api_messages,
+                        model=selected_model
+                    )
                         
-                        generated_text = chat_completion.choices[0].message.content
+                    generated_text = chat_completion.choices[0].message.content
                         
-                        # Update conversation history (AFTER getting the response)
-                        api_messages.append({"role": "user", "content": content_list})
-                        api_messages.append({"role": "assistant", "content": generated_text.strip()})
+                    # Update conversation history (AFTER getting the response)
+                    api_messages.append({"role": "user", "content": content_list})
+                    api_messages.append({"role": "assistant", "content": generated_text.strip()})
 
-                        if bot_settings["per_user"]:
-                            conversation_data[channel_id][user_id]["messages"] = messages[-context_messages_num:]
-                        else:
-                            conversation_data[channel_id]["messages"] = messages[-context_messages_num:]
+                    if bot_settings["per_user"]:
+                        conversation_data[channel_id][user_id]["messages"] = messages[-context_messages_num:]
+                    else:
+                        conversation_data[channel_id]["messages"] = messages[-context_messages_num:]
 
                     
                     if len(message.attachments) > 1 and selected_model == "llava-v1.5-7b-4096-preview":
