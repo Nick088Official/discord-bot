@@ -1803,7 +1803,6 @@ async def on_message(message: Message):
                         if image_url:
                             content_list.append({"type": "image_url", "image_url": {"url": image_url}})
     
-                        api_messages = [{"role": "user", "content": content_list}]
                     else:  # Use Groq API for other models (Multi-turn)
                             
                         api_messages = [{"role": "system", "content": system_prompt}]
@@ -1812,7 +1811,8 @@ async def on_message(message: Message):
                         for msg in context_messages:
                             api_messages.append(msg) 
 
-                        api_messages.append({"role": "user", "content": content_list})
+                    
+                    api_messages.append({"role": "user", "content": content_list})
 
                     print(api_messages)
                     
