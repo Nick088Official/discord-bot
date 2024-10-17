@@ -1811,7 +1811,7 @@ async def on_message(message: Message):
 
                         # Add context messages individually
                         for msg in context_messages:
-                            api_messages.append(msg)
+                            api_messages.append({"role": msg["role"], "content": msg["content"]}) 
                             print("appended context msg:", msg)
 
                         api_messages.append({"role": "user", "content": content_list})
