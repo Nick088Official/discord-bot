@@ -1808,17 +1808,15 @@ async def on_message(message: Message):
                         api_messages = [{"role": "system", "content": system_prompt}] + context_messages
                         api_messages.append({"role": "user", "content": message.content}) #Append only new message to context
 
+                        # Update conversation history (per-user or global)
+                        api_messages.append({"role": "assistant", "content": generated_text.strip()})
+                        conversation_data[conversation_key]["messages"] = messages[-context_messages_num:]
+
                     chat_completion = client.chat.completions.create(
                         messages=api_messages,
                         model=selected_model
                     )
                     generated_text = chat_completion.choices[0].message.content
-                    
-                    
-                        # Update conversation history (per-user or global)
-                        messages.append({"role": "user", "content": message.content})
-                        messages.append({"role": "assistant", "content": generated_text.strip()})
-                        conversation_data[conversation_key]["messages"] = messages[-context_messages_num:]
 
                     
                     if len(message.attachments) > 1 and selected_model == "llava-v1.5-7b-4096-preview":
