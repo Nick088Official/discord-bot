@@ -1807,17 +1807,18 @@ async def on_message(message: Message):
                     else:  # Use Groq API for other models (Multi-turn)
                         # Correctly Build api_messages with Context
                         api_messages = [{"role": "system", "content": system_prompt}] + context_messages
-                        api_messages.append({"role": "user", "content": message.content})
+                        content_list.append({"role": "user", "content": message.content})
                         
                         chat_completion = client.chat.completions.create(
                             messages=api_messages,
                             model=selected_model
                         )
+                        
                         generated_text = chat_completion.choices[0].message.content
                         
                         # Update conversation history (AFTER getting the response)
-                        messages.append({"role": "user", "content": message.content})
-                        messages.append({"role": "assistant", "content": generated_text.strip()})
+                        content_list.append({"role": "user", "content": message.content})
+                        content_list.append({"role": "assistant", "content": generated_text.strip()})
 
                         if bot_settings["per_user"]:
                             conversation_data[channel_id][user_id]["messages"] = messages[-context_messages_num:]
