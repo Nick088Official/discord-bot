@@ -1749,25 +1749,9 @@ async def on_message(message: Message):
             context_messages_num = bot_settings["context_messages"]
 
             context_messages = messages[-context_messages_num:]
+            
 
-            if selected_model in local_models:  # Use LangChain Ollama for local models
-                # Initialize LangChain Ollama LLM
-                llm = Ollama(model=selected_model)
-
-                # Initialize conversation chain with memory
-                memory = ConversationBufferMemory()
-                conversation = ConversationChain(llm=llm, memory=memory)
-
-                # Construct the prompt
-                prompt = system_prompt + "\n" + "\n".join([f"{m['role']}: {m['content']}" for m in context_messages]) + f"\nUser: {message.content}"
-
-                # Generate the response
-                generated_text = conversation.run(prompt)
-
-                # Send the generated text as a reply to the user
-                await message.reply(generated_text.strip())
-
-            elif selected_model in groq_models:  # Groq Models (LLaVA and others)
+            if selected_model in groq_models:  # Groq Models (LLaVA and others)
                 try:
                     # for api messages
                     content_list = [{"type": "text", "text": message.content}]
@@ -1825,6 +1809,9 @@ async def on_message(message: Message):
                         
                     generated_text = chat_completion.choices[0].message.content
 
+                    # Update user conversation history (per-user or global)
+                    messages.append({"role": "user", "content": content_list})
+            
                     
                     if len(message.attachments) > 1 and selected_model == "llava-v1.5-7b-4096-preview":
                         generated_text = "Only one image can be processed per request, processing only your first image:\n" + generated_text
@@ -1864,6 +1851,9 @@ async def on_message(message: Message):
 
                     response = gemini_chat.send_message(message.content)
                     generated_text = response.text
+                    
+                    # Update user conversation history (per-user or global)
+                    messages.append({"role": "user", "content": message.content})
 
                 except Exception as e:
                     await message.channel.send(f"An error occurred with Gemini: {e}")
@@ -1882,11 +1872,9 @@ async def on_message(message: Message):
             # Logging and debugging 
             logging.info(f"User: {message.author} - Message: {message.content} - Generated Text: {generated_text}")
 
-            # Update conversation history (per-user or global)
-            if selected_model in groq_models:
-                messages.append({"role": "user", "content": content_list})
-            else:
-                messages.append({"role": "user", "content": message.content})
+            # Update model conversation history (per-user or global)
+            messages.append({"role": "user", "content": content_list})
+            messages.append({"role": "user", "content": message.content})
             
             messages.append({"role": "assistant", "content": generated_text.strip()})
 
