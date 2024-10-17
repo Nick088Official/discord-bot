@@ -1880,7 +1880,11 @@ async def on_message(message: Message):
             logging.info(f"User: {message.author} - Message: {message.content} - Generated Text: {generated_text}")
 
             # Update conversation history (per-user or global)
-            messages.append({"role": "user", "content": message.content})
+            if selected_model in groq_models and not (selected_model == "llava-v1.5-7b-4096-preview" or selected_model == "llama-3.2-11b-vision-preview"):
+                messages.append({"role": "user", "content": content_list})
+            else:
+                messages.append({"role": "user", "content": message.content})
+            
             messages.append({"role": "assistant", "content": generated_text.strip()})
 
             if bot_settings["per_user"]:
