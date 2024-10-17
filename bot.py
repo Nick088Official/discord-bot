@@ -1813,7 +1813,9 @@ async def on_message(message: Message):
                             api_messages.append(msg) 
 
                         api_messages.append({"role": "user", "content": content_list})
-                        
+
+                    print(api_messages)
+                    
                     chat_completion = client.chat.completions.create(
                         messages=api_messages,
                         model=selected_model
@@ -1821,7 +1823,6 @@ async def on_message(message: Message):
                         
                     generated_text = chat_completion.choices[0].message.content
 
-                    print(api_messages)
                     
                     if len(message.attachments) > 1 and selected_model == "llava-v1.5-7b-4096-preview":
                         generated_text = "Only one image can be processed per request, processing only your first image:\n" + generated_text
@@ -1886,6 +1887,8 @@ async def on_message(message: Message):
                 messages.append({"role": "user", "content": message.content})
             
             messages.append({"role": "assistant", "content": generated_text.strip()})
+
+            print(messages)
 
             if bot_settings["per_user"]:
                 conversation_data[channel_id][user_id]["messages"] = messages[-context_messages_num:]
