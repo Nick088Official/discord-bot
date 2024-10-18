@@ -1840,7 +1840,7 @@ async def on_message(message: Message):
                     for msg in context_messages:
                         gemini_chat._history.append({
                             "role": "user" if msg["role"] == "user" else "model",
-                            "parts": msg["content"]
+                            "parts": [{"text": part["text"]} for part in msg["content"]]
                         })
 
                     response = gemini_chat.send_message(message.content)
