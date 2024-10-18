@@ -1792,10 +1792,12 @@ async def on_message(message: Message):
                     else:  # Use Groq API for other models (Multi-turn)
                             
                         api_messages = [{"role": "system", "content": system_prompt}]
+                        print("TEST SYSTEM GOT:", api_messages)
 
                         # Add context messages individually
                         for msg in context_messages:
-                            api_messages.append({"role": msg["role"], "content": msg["content"]}) 
+                            api_messages.append({"role": msg["role"], "content": msg["content"]})
+                            print("appending context:" api_messages)
 
                         api_messages.append({"role": "user", "content": content_list})
 
