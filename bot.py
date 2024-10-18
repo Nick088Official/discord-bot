@@ -1753,7 +1753,7 @@ async def on_message(message: Message):
 
             if selected_model in groq_models:  # Groq Models (LLaVA and others)
                 try:
-                    # for api messages
+                    # for api messages, initialize with the text message of the request
                     content_list = [{"type": "text", "text": message.content}]
                     
                     if selected_model == "llava-v1.5-7b-4096-preview" or "llama-3.2-11b-vision-preview": # Vision Groq SPECIFIC LOGIC 
@@ -1796,11 +1796,10 @@ async def on_message(message: Message):
                         # Add context messages individually
                         for msg in context_messages:
                             api_messages.append({"role": msg["role"], "content": msg["content"]}) 
-                            print("appended context msg:", msg)
 
                         api_messages.append({"role": "user", "content": content_list})
 
-                    print(api_messages)
+                    print("THE API MESSAGES THAT GOT PROCESSED:", api_messages)
                     
                     chat_completion = client.chat.completions.create(
                         messages=api_messages,
