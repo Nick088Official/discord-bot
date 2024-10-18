@@ -1794,11 +1794,14 @@ async def on_message(message: Message):
                         
                     api_messages = [{"role": "system", "content": system_prompt}]
                     print("TEST SYSTEM GOT:", api_messages)
-
-                    # Add context messages individually
+                    
+                    # Add context messages individually (CORRECTED)
                     for msg in context_messages:
-                        for part in msg["content"]:  # Iterate through content parts
-                            api_messages.append({"role": msg["role"], "content": [part]})
+                        if isinstance(msg["content"], str):  # Simple text message
+                            api_messages.append({"role": msg["role"], "content": msg["content"]})
+                        else:  # Message with media (list of dicts)
+                            for part in msg["content"]:
+                                api_messages.append({"role": msg["role"], "content": [part]})
 
                     api_messages.append({"role": "user", "content": content_list})
 
