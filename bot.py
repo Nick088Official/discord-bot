@@ -1826,7 +1826,7 @@ async def on_message(message: Message):
                     # --- Gemini Model Handling (Per-User or Global) --- 
                     chat_key = f"gemini_chat_{user_id}" if bot_settings["per_user"] else "gemini_chat"
 
-                    if not hasattr(bot, chat_key):
+                    if not hasattr(bot, chat_key):  # Check for chat instance
                         bot.__setattr__(chat_key, gemini.GenerativeModel(
                             model_name=bot_settings["model"],
                             generation_config=generation_config,
@@ -1843,9 +1843,12 @@ async def on_message(message: Message):
                             "parts": [{"text": part["content"]} for part in msg["content"]] # Ensure 'parts' is a list of dicts
                         })
 
-                    # Set the new history.
-                    gemini_chat._history = gemini_history
-                    response = gemini_chat.send_message({"parts": [{"text": message.content}]})
+                    # --- Clear existing history and set new history ---
+                    gemini_chat._history.clear()
+                    for item in gemini_history:
+                        gemini_chat._history.append(item)
+
+                    response = gemini_chat.send_message(message.content)
                     generated_text = response.text
 
 
