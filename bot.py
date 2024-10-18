@@ -1750,9 +1750,6 @@ async def on_message(message: Message):
 
             context_messages = messages[-context_messages_num:]
 
-            # initialize it
-            generated_text = ""
-            
 
             if selected_model in groq_models:  # Groq Models (LLaVA and others)
                 try:
