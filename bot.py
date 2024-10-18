@@ -1826,34 +1826,28 @@ async def on_message(message: Message):
                     # --- Gemini Model Handling (Per-User or Global) --- 
                     chat_key = f"gemini_chat_{user_id}" if bot_settings["per_user"] else "gemini_chat"
 
-                    if not hasattr(bot, chat_key):  # Check for chat instance
+                    if not hasattr(bot, chat_key):
                         bot.__setattr__(chat_key, gemini.GenerativeModel(
-                            model_name=selected_model,
+                            model_name=bot_settings["model"],
                             generation_config=generation_config,
                             system_instruction=system_prompt
                         ).start_chat())
 
-                    gemini_chat = getattr(bot, chat_key)  # Get the correct chat instance
+                    gemini_chat = getattr(bot, chat_key)
 
-                    # --- Limit context messages for Gemini ---
-                    # Add context messages individually
-                    gemini_history = [] 
+                    # Construct Gemini-compatible history
+                    gemini_history = []
                     for msg in context_messages:
                         gemini_history.append({
                             "role": "user" if msg["role"] == "user" else "model",
-                            "parts": msg["content"]
+                            "parts": [{"text": part["content"]} for part in msg["content"]] # Ensure 'parts' is a list of dicts
                         })
 
-                    # --- Clear existing history and set new history ---
-                    gemini_chat._history.clear()
-                    for item in gemini_history:
-                        gemini_chat._history.append(item)
-
-                    response = gemini_chat.send_message(message.content)
+                    # Set the new history.
+                    gemini_chat._history = gemini_history
+                    response = gemini_chat.send_message({"parts": [{"text": message.content}]})
                     generated_text = response.text
-                    
-                    # Update user conversation history (per-user or global)
-                    messages.append({"role": "user", "content": message.content})
+
 
                 except Exception as e:
                     await message.channel.send(f"An error occurred with Gemini: {e}")
@@ -1872,12 +1866,11 @@ async def on_message(message: Message):
             # Logging and debugging 
             logging.info(f"User: {message.author} - Message: {message.content} - Generated Text: {generated_text}")
 
-            # Update model conversation history (per-user or global)
-            messages.append({"role": "user", "content": content_list})
-            messages.append({"role": "user", "content": message.content})
-            
-            messages.append({"role": "assistant", "content": generated_text.strip()})
+            # Update history (consistent structure for both Gemini and Groq)
+            messages.append({"role": "user", "content": [{"text": message.content}]}) # List of dicts for content
+            messages.append({"role": "assistant", "content": [{"text": generated_text.strip()}]}) # List of dicts
 
+            
             print(messages)
 
             if bot_settings["per_user"]:
