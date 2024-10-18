@@ -1790,6 +1790,7 @@ async def on_message(message: Message):
                         api_messages = [{"role": "user", "content": content_list}]
 
                     elif selected_model in groq_models and not (selected_model == "llava-v1.5-7b-4096-preview" or selected_model == "llama-3.2-11b-vision-preview"):  # Use Groq API for other models (Multi-turn)
+                        print("if u see dis, the elif works")
                         
                     api_messages = [{"role": "system", "content": system_prompt}]
                     print("TEST SYSTEM GOT:", api_messages)
