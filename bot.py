@@ -1828,19 +1828,20 @@ async def on_message(message: Message):
 
                     if not hasattr(bot, chat_key):  # Check for chat instance
                         bot.__setattr__(chat_key, gemini.GenerativeModel(
-                            model_name=bot_settings["model"],
+                            model_name=selected_model,
                             generation_config=generation_config,
                             system_instruction=system_prompt
                         ).start_chat())
 
-                    gemini_chat = getattr(bot, chat_key)
+                    gemini_chat = getattr(bot, chat_key)  # Get the correct chat instance
 
-                    # Construct Gemini-compatible history
-                    gemini_history = []
+                    # --- Limit context messages for Gemini ---
+                    # Add context messages individually
+                    gemini_history = [] 
                     for msg in context_messages:
                         gemini_history.append({
                             "role": "user" if msg["role"] == "user" else "model",
-                            "parts": [{"text": part["content"]} for part in msg["content"]] # Ensure 'parts' is a list of dicts
+                            "parts": msg["content"]
                         })
 
                     # --- Clear existing history and set new history ---
