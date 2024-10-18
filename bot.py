@@ -1837,17 +1837,11 @@ async def on_message(message: Message):
 
                     # --- Limit context messages for Gemini ---
                     # Add context messages individually
-                    gemini_history = [] 
                     for msg in context_messages:
-                        gemini_history.append({
+                        gemini_chat._history.append({
                             "role": "user" if msg["role"] == "user" else "model",
                             "parts": msg["content"]
                         })
-
-                    # --- Clear existing history and set new history ---
-                    gemini_chat._history.clear()
-                    for item in gemini_history:
-                        gemini_chat._history.append(item)
 
                     response = gemini_chat.send_message(message.content)
                     generated_text = response.text
