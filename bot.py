@@ -396,8 +396,9 @@ def check_file(input_file_path):
 )
 @app_commands.choices(
     asr_model=[
-        discord.app_commands.Choice(name="Whisper large-v3", value="whisper-large-v3"),
-        discord.app_commands.Choice(name="Distil-Whisper English", value="distil-whisper-large-v3-en"),
+        discord.app_commands.Choice(name="Whisper large-v3 (Multilingual High Quality)", value="whisper-large-v3"),
+        discord.app_commands.Choice(name="Whisper large-v3 Turbo (Multilingual Fast)", value="whisper-large-v3-turbo"),
+        discord.app_commands.Choice(name="Distil-Whisper English (Fastest)", value="distil-whisper-large-v3-en"),
     ],
     response_format=[
         discord.app_commands.Choice(name="text", value="text"),
@@ -407,7 +408,7 @@ def check_file(input_file_path):
 )
 async def transcript(interaction: discord.Interaction,
                   audio_file: discord.Attachment,
-                  asr_model: str = "whisper-large-v3",
+                  asr_model: str = "whisper-large-v3-turbo",
                   language: Optional[str] = None,
                   response_format: Optional[str] = "text",
                   temperature: Optional[float] = 0.0,
