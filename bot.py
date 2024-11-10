@@ -1588,7 +1588,7 @@ async def homework(interaction: discord.Interaction, who: discord.Member, durati
     timeout_duration = timedelta(minutes=duration)
     try:
         # Apply timeout to the member
-        await who.edit(timed_out_until=timeout_duration)
+        await who.timeout(timeout_duration)
         await interaction.response.send_message(f"{who.mention} has been muted for {duration} minutes. Reason: Homework")
     except discord.Forbidden:
         await interaction.response.send_message("I don't have permission to mute this member.")
