@@ -1576,12 +1576,6 @@ async def toggle_per_user(interaction: discord.Interaction):
     who="Who to mute (Lusbert or Poopmaster)",
     duration="Duration of the mute (minutes).",
 )
-@app_commands.choices(
-    who=[
-        discord.app_commands.Choice(name="Poopmaster", value=936673139419664414),
-        discord.app_commands.Choice(name="Lusbert", value=917711764571951144),
-    ]
-)
 async def homework(interaction: discord.Interaction, who: discord.Member, duration: int, reason: str = "Homework"):
     authorized_users_homework = [936673139419664414, 917711764571951144, 911742715019001897] #poopmaster, lusbert & nick088
     user = interaction.user
