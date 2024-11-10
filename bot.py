@@ -1582,7 +1582,7 @@ async def toggle_per_user(interaction: discord.Interaction):
     ]
 )
 async def mute(interaction: discord.Interaction, who: int, duration: int, reason: str = "Homework"):
-    if interaction.user != "936673139419664414 or 917711764571951144: #poopmaster & lusbert
+    if interaction.user != 936673139419664414 or 917711764571951144: #poopmaster & lusbert
         await interaction.response.send_message("You cannot mute them.")
         return
 
