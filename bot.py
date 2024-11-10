@@ -1570,6 +1570,33 @@ async def toggle_per_user(interaction: discord.Interaction):
     await interaction.response.send_message(f"Per-user conversation history is now turned {new_state}.")
 
 
+@bot.tree.command(name="homework", description="Mute to go do homework (FOR LUSBERT & POOPMASTER ONLY).")
+@app_commands.describe(
+    who="Who to mute (Lusbert or Poopmaster)",
+    duration="Duration of the mute.",
+)
+@app_commands.choices(
+    who=[
+        discord.app_commands.Choice(name="Poopmaster", value="936673139419664414"),
+        discord.app_commands.Choice(name="Lusbert", value="917711764571951144"),
+    ]
+)
+async def mute(interaction: discord.Interaction, who: str, duration: int, reason: str = "Homework"):
+    if member != 936673139419664414 or 917711764571951144: #poopmaster & lusbert
+        await ctx.send("You cannot mute them.")
+        return
+
+    # Set the timeout duration
+    timeout_duration = timedelta(minutes=duration)
+    try:
+        # Apply timeout to the member
+        await member.timeout_for(timeout_duration, reason=reason)
+        await ctx.send(f"{member.mention} has been muted for {duration} minutes. Reason: Homework")
+    except discord.Forbidden:
+        await ctx.send("I don't have permission to mute this member.")
+    except discord.HTTPException as e:
+        await ctx.send(f"Failed to mute the member: {e}")
+
 # --- Message Handling --- 
 
 nuhuh = ["adfjhaskjfhaksfhjksa"]
