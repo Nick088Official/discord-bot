@@ -697,6 +697,7 @@ async def separate(interaction: discord.Interaction, audio_file: discord.Attachm
         await interaction.user.send(f"Error connecting to the MVSEP API: {e}")
     except Exception as e:
         await interaction.user.send(f"An error occurred: {e}")
+        
 @bot.tree.command(name="kill", description="murder")
 async def kill(interaction: discord.Interaction, user: str):
   """
@@ -1581,7 +1582,7 @@ async def toggle_per_user(interaction: discord.Interaction):
         discord.app_commands.Choice(name="Lusbert", value=917711764571951144),
     ]
 )
-async def homework(interaction: discord.Interaction, who: int, duration: int, reason: str = "Homework"):
+async def homework(interaction: discord.Interaction, who: discord.Member, duration: int, reason: str = "Homework"):
     authorized_users_homework = [936673139419664414, 917711764571951144, 911742715019001897] #poopmaster, lusbert & nick088
     user = interaction.user
     if user.id not in authorized_users_homework:
