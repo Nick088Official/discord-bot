@@ -1577,12 +1577,12 @@ async def toggle_per_user(interaction: discord.Interaction):
 )
 @app_commands.choices(
     who=[
-        discord.app_commands.Choice(name="Poopmaster", value="936673139419664414"),
-        discord.app_commands.Choice(name="Lusbert", value="917711764571951144"),
+        discord.app_commands.Choice(name="Poopmaster", value=936673139419664414),
+        discord.app_commands.Choice(name="Lusbert", value=917711764571951144),
     ]
 )
-async def mute(interaction: discord.Interaction, who: str, duration: int, reason: str = "Homework"):
-    if who != 936673139419664414 or 917711764571951144: #poopmaster & lusbert
+async def mute(interaction: discord.Interaction, who: int, duration: int, reason: str = "Homework"):
+    if interaction.user != "936673139419664414 or 917711764571951144: #poopmaster & lusbert
         await interaction.response.send_message("You cannot mute them.")
         return
 
