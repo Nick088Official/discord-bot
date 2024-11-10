@@ -1582,20 +1582,20 @@ async def toggle_per_user(interaction: discord.Interaction):
     ]
 )
 async def mute(interaction: discord.Interaction, who: str, duration: int, reason: str = "Homework"):
-    if member != 936673139419664414 or 917711764571951144: #poopmaster & lusbert
-        await ctx.send("You cannot mute them.")
+    if who != 936673139419664414 or 917711764571951144: #poopmaster & lusbert
+        await interaction.response.send_message("You cannot mute them.")
         return
 
     # Set the timeout duration
     timeout_duration = timedelta(minutes=duration)
     try:
         # Apply timeout to the member
-        await member.timeout_for(timeout_duration, reason=reason)
-        await ctx.send(f"{member.mention} has been muted for {duration} minutes. Reason: Homework")
+        await who.timeout_for(timeout_duration, reason=reason)
+        await interaction.response.send_message(f"{who.mention} has been muted for {duration} minutes. Reason: Homework")
     except discord.Forbidden:
-        await ctx.send("I don't have permission to mute this member.")
+        await interaction.response.send_message("I don't have permission to mute this member.")
     except discord.HTTPException as e:
-        await ctx.send(f"Failed to mute the member: {e}")
+        await interaction.response.send_message(f"Failed to mute the member: {e}")
 
 # --- Message Handling --- 
 
