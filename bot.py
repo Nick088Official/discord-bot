@@ -1573,7 +1573,7 @@ async def toggle_per_user(interaction: discord.Interaction):
 @bot.tree.command(name="homework", description="Mute to go do homework (FOR LUSBERT & POOPMASTER ONLY).")
 @app_commands.describe(
     who="Who to mute (Lusbert or Poopmaster)",
-    duration="Duration of the mute.",
+    duration="Duration of the mute (minutes).",
 )
 @app_commands.choices(
     who=[
@@ -1581,18 +1581,19 @@ async def toggle_per_user(interaction: discord.Interaction):
         discord.app_commands.Choice(name="Lusbert", value=917711764571951144),
     ]
 )
-async def mute(interaction: discord.Interaction, who: int, duration: int, reason: str = "Homework"):
+async def homework(interaction: discord.Interaction, who: int, duration: int, reason: str = "Homework"):
     authorized_users_homework = [936673139419664414, 917711764571951144, 911742715019001897] #poopmaster, lusbert & nick088
     user = interaction.user
     if user.id not in authorized_users_homework:
         await interaction.response.send_message("You cannot mute them.")
+        print(f"iuser: {user.id}, suser: {who}")
         return
 
     # Set the timeout duration
     timeout_duration = timedelta(minutes=duration)
     try:
         # Apply timeout to the member
-        await who.timeout_for(timeout_duration, reason=reason)
+        await who.edit(timed_out_until=timeout_duration)
         await interaction.response.send_message(f"{who.mention} has been muted for {duration} minutes. Reason: Homework")
     except discord.Forbidden:
         await interaction.response.send_message("I don't have permission to mute this member.")
