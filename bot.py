@@ -99,7 +99,7 @@ def split_message(text):
 # Bot-wide settings
 bot_settings = {
     "model": "llama-3.1-70b-versatile",
-    "system_prompt": "You are a helpful and friendly AI assistant on Discord.",
+    "system_prompt": "You’re a Chatbot AI on a Discord Server named Sanctuary. Your ID is “<@1190452814518947860>”, so ignore if your ID gets mentioned, the user is just trying to talk to you.",
     "context_messages": 5,
     "llm_enabled": True,  # LLM is enabled by default for the entire bot
     "per_user": False  # Per-user conversation history is disabled by default 
