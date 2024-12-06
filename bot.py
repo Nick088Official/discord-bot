@@ -140,16 +140,14 @@ groq_models = [
     "llama3-8b-8192",
     "mixtral-8x7b-32768",
     "llama-3.1-405b-reasoning",
-    "llama-3.1-70b-versatile",
+    "llama-3.3-70b-versatile",
     "llama-3.1-8b-instant",
     "gemma-7b-it",
     "gemma2-9b-it",
-    "llava-v1.5-7b-4096-preview",
     "llama-3.2-1b-preview",
     "llama-3.2-3b-preview",
-    "llama-3.2-11b-text-preview",
     "llama-3.2-11b-vision-preview",
-    "llama-3.2-90b-text-preview",
+    "llama-3.2-90b-vision-preview",
     "llama-guard-3-8b"
 ]
 
@@ -1782,9 +1780,9 @@ async def on_message(message: Message):
                     # for api messages, initialize with the text message of the request
                     content_list = [{"type": "text", "text": message.content}]
                     
-                    if selected_model == "llava-v1.5-7b-4096-preview" or "llama-3.2-11b-vision-preview": # Vision Groq SPECIFIC LOGIC 
+                    if selected_model == "llama-3.2-90b-vision-preview" or "llama-3.2-11b-vision-preview": # Vision Groq SPECIFIC VISION LOGIC 
                         # Check for multi-turn conversation attempt
-                        if (selected_model == "llava-v1.5-7b-4096-preview" or selected_model == "llama-3.2-11b-vision-preview") and is_reply_to_bot and messages and messages[-1]["role"] == "assistant": 
+                        if (selected_model == "llama-3.2-90b-vision-preview" or selected_model == "llama-3.2-11b-vision-preview") and is_reply_to_bot and messages and messages[-1]["role"] == "assistant": 
                             await message.reply("For this model, multi-turn conversations are not currently supported. Only one user message is allowed per request.")
                             return
 
